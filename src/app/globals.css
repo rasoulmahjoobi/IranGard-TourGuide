@@ -1,26 +1,81 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #FBF6EF;
+  --foreground: #2B2118;
+
+  --card: #FFFFFF;
+  --border: #EAD9B8;
+
+  --primary: #D96A34;
+  --primary-foreground: #FFF8F0;
+
+  --secondary: #10555A;
+  --secondary-foreground: #FFF8F0;
+
+  --accent: #E3A93B;
+  --accent-foreground: #2B2118;
+
+  --coral: #EF5B4E;
+  --coral-foreground: #FFF8F0;
+
+  --turquoise: #12A594;
+  --turquoise-foreground: #FFF8F0;
+
+  --muted: #F3E7CF;
+  --muted-foreground: #8A7457;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-coral: var(--coral);
+  --color-coral-foreground: var(--coral-foreground);
+  --color-turquoise: var(--turquoise);
+  --color-turquoise-foreground: var(--turquoise-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --font-sans: var(--font-vazirmatn), "Tahoma", ui-sans-serif, system-ui, sans-serif;
+
+  --animate-fade-up: fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-fade-in: fade-in 1s ease-out both;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-blob: blob 10s ease-in-out infinite;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(28px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-16px); }
+}
+@keyframes blob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(20px, -20px) scale(1.1); }
+  66% { transform: translate(-15px, 15px) scale(0.95); }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-background);
+  color: var(--color-foreground);
+}
+
+::selection {
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
 }
