@@ -1,0 +1,45 @@
+"use client";
+
+import { Mountain, Landmark, Waves, Plane, Compass, type LucideIcon } from "lucide-react";
+import { useCategories } from "@/src/hooks/useCategories";
+import { cn } from "@/src/lib/utils";
+
+const iconMap: Record<number, { icon: LucideIcon; color: string }> = {
+  1: { icon: Mountain, color: "text-turquoise" },
+  2: { icon: Landmark, color: "text-accent" },
+  3: { icon: Waves, color: "text-primary" },
+  4: { icon: Plane, color: "text-coral" },
+};
+const fallbackIcon = { icon: Compass, color: "text-secondary" };
+
+export function CategoryChips() {
+  const { data: categories, isLoading } = useCategories();
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center gap-3">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-11 w-32 animate-pulse rounded-full bg-muted" />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="-mx-4 flex gap-3 overflow-x-auto px-4 py-2 sm:mx-0 sm:flex-wrap sm:justify-center sm:px-0">
+      {categories?.map((cat, i) => {
+        const { icon: Icon, color } = iconMap[cat.id] ?? fallbackIcon;
+        return (
+          <div
+            key={cat.id}
+            style={{ animationDelay: `${i * 80}ms` }}
+            className="animate-fade-up flex shrink-0 cursor-pointer items-center gap-2 rounded-full border border-border bg-card px-5 py-2.5 shadow-sm transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
+          >
+            <Icon className={cn("h-4 w-4", color)} />
+            <span className="text-sm font-semibold text-foreground">{cat.name}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Vazirmatn } from "next/font/google";
 import "./globals.css";
+import { SITE_NAME } from "@/src/lib/constants";
 import { Providers } from "./providers";
-import { SITE_NAME } from "../lib/constants";
 
 const vazirmatn = Vazirmatn({
   subsets: ["arabic"],
