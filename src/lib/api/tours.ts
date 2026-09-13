@@ -1,8 +1,6 @@
 import { apiClient } from "@/src/lib/apiClient";
 import type { Tour } from "@/src/types/tour";
 
-// این پارامترها دقیقاً همون query paramsی هستن که json-server پشتیبانی می‌کنه
-// (category, subcategory, q برای سرچ، _page/_limit برای pagination، _sort/_order)
 export interface GetToursParams {
   category?: number;
   subcategory?: number;
@@ -13,9 +11,15 @@ export interface GetToursParams {
   _order?: "asc" | "desc";
 }
 
-export async function getTours(params?: GetToursParams): Promise<Tour[]> {
-  const { data } = await apiClient.get<Tour[]>("/products", { params });
-  return data;
+export interface ToursResult {
+  tours: Tour[];
+  totalCount: number;
+}
+
+export async function getTours(params?: GetToursParams): Promise<ToursResult> {
+  const { data, headers } = await apiClient.get<Tour[]>("/products", { params });
+  const totalCount = Number(headers["x-total-count"] ?? data.length);
+  return { tours: data, totalCount };
 }
 
 export async function getTourById(id: number): Promise<Tour> {
