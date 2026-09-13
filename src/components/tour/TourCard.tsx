@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { MapPin, Star, Clock } from "lucide-react";
 import type { Tour } from "@/src/types/tour";
 import { getCategoryGradient } from "@/src/lib/tourVisuals";
 import { TourImage } from "./TourImage";
 import { ROUTES } from "@/src/lib/constants";
-
+import { MapPin, Star, Clock, CalendarDays } from "lucide-react"; // به‌جای import قبلی آیکون‌ها
+import { toPersianDate } from "@/src/lib/dateUtils";
 interface TourCardProps {
   tour: Tour;
   categoryName?: string;
@@ -51,7 +51,10 @@ export function TourCard({ tour, categoryName, delay = 0 }: TourCardProps) {
           <Clock className="h-3.5 w-3.5" />
           {tour.duration}
         </div>
-        <div className="flex items-center justify-between border-t border-border pt-3">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <CalendarDays className="h-3.5 w-3.5" />
+          حرکت: {toPersianDate(tour.departureDate)}
+        </div>        <div className="flex items-center justify-between border-t border-border pt-3">
           <span className="text-xs text-muted-foreground">شروع قیمت از</span>
           <span className="text-lg font-extrabold text-primary">
             {tour.price.toLocaleString("fa-IR")}{" "}

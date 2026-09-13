@@ -2,8 +2,9 @@ export const SITE_NAME = "ایران گرد تور";
 
 export const ROUTES = {
   home: "/",
-  category: (slug: string) => `/category/${slug}`,
-  product: (slug: string) => `/product/${slug}`,
+  category: (id: string) => `/category/${id}`,
+  subcategory: (id: string) => `/subcategory/${id}`,
+  product: (id: string) => `/product/${id}`,
   cart: "/cart",
   checkout: "/checkout",
   paymentResult: "/payment/result",

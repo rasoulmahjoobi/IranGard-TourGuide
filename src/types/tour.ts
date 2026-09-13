@@ -24,7 +24,8 @@ export interface Tour {
   location: string;
   duration: string;
   rating: number;
+  departureDate: string; // فرمت ISO مثل "2026-10-05"
   description: string;
-  categoryName?: string;    // فقط تو route جزئیات یک تور برمی‌گرده (server.js)
-  subcategoryName?: string; // همون‌طور
+  categoryName?: string;
+  subcategoryName?: string;
 }
