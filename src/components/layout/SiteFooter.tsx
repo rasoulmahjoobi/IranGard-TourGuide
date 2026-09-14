@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import {  Send, Phone } from "lucide-react";
+import { Send, Phone } from "lucide-react";
 import { SITE_NAME, ROUTES } from "@/src/lib/constants";
 import { Logo } from "@/src/components/icons/Logo";
 import { useCategories } from "@/src/hooks/useCategories";
+import { AboutModalTrigger } from "./AboutModalTrigger";
 
-const companyLinks = ["درباره ما", "همکاری با ما", "قوانین و مقررات", "سوالات متداول"];
+const otherCompanyLinks = ["همکاری با ما", "قوانین و مقررات", "سوالات متداول"];
 
 export function SiteFooter() {
   const { data: categories, isLoading } = useCategories();
@@ -23,7 +24,7 @@ export function SiteFooter() {
             همراه شما برای کشف بهترین مقصدهای ایران و جهان.
           </p>
           <div className="flex gap-3">
-            {[ Send, Phone].map((Icon, i) => (
+            {[Send, Phone].map((Icon, i) => (
               <span
                 key={i}
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 transition hover:bg-accent hover:text-accent-foreground"
@@ -53,7 +54,11 @@ export function SiteFooter() {
 
         <div className="flex flex-col gap-3">
           <h4 className="text-sm font-bold text-accent">شرکت</h4>
-          {companyLinks.map((link) => (
+          <AboutModalTrigger
+            label="درباره ما"
+            className="text-sm text-secondary-foreground/70 transition hover:text-white"
+          />
+          {otherCompanyLinks.map((link) => (
             <span
               key={link}
               className="cursor-pointer text-sm text-secondary-foreground/70 transition hover:text-white"

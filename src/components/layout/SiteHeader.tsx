@@ -2,6 +2,11 @@ import Link from "next/link";
 import { ShoppingCart, Menu } from "lucide-react";
 import { SITE_NAME, ROUTES } from "@/src/lib/constants";
 import { Logo } from "@/src/components/icons/Logo";
+import { AboutModalTrigger } from "./AboutModalTrigger";
+import { ContactModalTrigger } from "./ContactModalTrigger";
+
+const navLinkClass =
+  "relative cursor-pointer transition-colors hover:text-primary after:absolute after:-bottom-1 after:right-0 after:h-0.5 after:w-0 after:bg-primary after:transition-all after:duration-300 hover:after:w-full";
 
 export function SiteHeader() {
   return (
@@ -15,14 +20,14 @@ export function SiteHeader() {
         </Link>
 
         <nav className="hidden items-center gap-8 text-sm font-semibold text-foreground md:flex">
-          {["تورهای داخلی", "تورهای خارجی", "درباره ما", "تماس با ما"].map((item) => (
-            <span
-              key={item}
-              className="relative cursor-pointer transition-colors hover:text-primary after:absolute after:-bottom-1 after:right-0 after:h-0.5 after:w-0 after:bg-primary after:transition-all after:duration-300 hover:after:w-full"
-            >
-              {item}
-            </span>
-          ))}
+          <Link href={ROUTES.domestic} className={navLinkClass}>
+            تورهای داخلی
+          </Link>
+          <Link href={ROUTES.category("4")} className={navLinkClass}>
+            تورهای خارجی
+          </Link>
+          <AboutModalTrigger label="درباره ما" className={navLinkClass} />
+          <ContactModalTrigger label="تماس با ما" className={navLinkClass} />
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-3">
