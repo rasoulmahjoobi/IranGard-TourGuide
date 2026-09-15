@@ -8,6 +8,7 @@ import { useTours } from "@/src/hooks/useTours";
 import { useDebounce } from "@/src/hooks/useDebounce";
 import { TourGrid } from "@/src/components/tour/TourGrid";
 import { TourGridSkeleton } from "@/src/components/tour/TourGridSkeleton";
+import { SiteSidebar } from "@/src/components/tour/SiteSidebar";
 import { SearchInput, Pagination } from "@/src/components/ui";
 import { cn } from "@/src/lib/utils";
 
@@ -24,8 +25,6 @@ export default function CategoryPage() {
   const subcategoryParam = searchParams.get("subcategory");
   const page = Number(searchParams.get("page") ?? "1");
 
-  // سرچ رو تو یه state محلی نگه می‌داریم تا هر حرف بلافاصله URL رو عوض نکنه؛
-  // فقط بعد از debounce، URL (و درنتیجه fetch) آپدیت می‌شه — این دقیقاً نکته‌ی debounce هست.
   const [searchInput, setSearchInput] = useState(searchParams.get("q") ?? "");
   const debouncedSearch = useDebounce(searchInput, 400);
 
@@ -46,7 +45,6 @@ export default function CategoryPage() {
     [searchParams, pathname, router]
   );
 
-  // وقتی سرچ (با تاخیر) عوض شد، بریم صفحه‌ی ۱ و URL رو آپدیت کن
   useEffect(() => {
     updateParams({ q: debouncedSearch || null, page: null });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -64,6 +62,8 @@ export default function CategoryPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10">
+      <SiteSidebar />
+
       <div className="flex items-center gap-3">
         <span className="h-6 w-1.5 rounded-full bg-primary" />
         <h1 className="text-xl font-extrabold text-foreground sm:text-2xl">

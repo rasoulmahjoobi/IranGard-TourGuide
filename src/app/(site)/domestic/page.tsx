@@ -7,6 +7,7 @@ import { useTours } from "@/src/hooks/useTours";
 import { useDebounce } from "@/src/hooks/useDebounce";
 import { TourGrid } from "@/src/components/tour/TourGrid";
 import { TourGridSkeleton } from "@/src/components/tour/TourGridSkeleton";
+import { SiteSidebar } from "@/src/components/tour/SiteSidebar";
 import { SearchInput, Pagination } from "@/src/components/ui";
 import { cn } from "@/src/lib/utils";
 
@@ -55,6 +56,8 @@ export default function DomesticToursPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10">
+      <SiteSidebar />
+
       <div className="flex items-center gap-3">
         <span className="h-6 w-1.5 rounded-full bg-primary" />
         <h1 className="text-xl font-extrabold text-foreground sm:text-2xl">تورهای داخلی</h1>
