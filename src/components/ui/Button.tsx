@@ -14,9 +14,9 @@ export function Button({ variant = "primary", loading, className, children, disa
       disabled={disabled || loading}
       className={cn(
         "rounded-full px-5 py-2.5 text-sm font-semibold shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50",
-        variant === "primary" && "bg-blue-600 text-white hover:bg-blue-700",
-        variant === "secondary" && "bg-gray-100 text-gray-900 hover:bg-gray-200",
-        variant === "ghost" && "bg-transparent text-blue-600 hover:underline",
+        variant === "primary" && "bg-gradient-to-l from-primary to-coral text-primary-foreground hover:shadow-md",
+        variant === "secondary" && "bg-muted text-foreground hover:bg-muted/70",
+        variant === "ghost" && "bg-transparent text-primary hover:underline",
         className
       )}
       {...props}
