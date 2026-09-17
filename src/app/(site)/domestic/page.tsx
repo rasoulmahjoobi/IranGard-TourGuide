@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCategories } from "@/src/hooks/useCategories";
 import { useTours } from "@/src/hooks/useTours";
@@ -24,8 +24,11 @@ export default function DomesticToursPage() {
   const [searchInput, setSearchInput] = useState(searchParams.get("q") ?? "");
   const debouncedSearch = useDebounce(searchInput, 400);
 
+  const prevSearchRef = useRef(debouncedSearch);
+
   const { data: categories } = useCategories();
-  const domesticCategories = categories?.filter((c) => c.id !== INTERNATIONAL_CATEGORY_ID) ?? [];
+  const domesticCategories =
+    categories?.filter((c) => c.id !== INTERNATIONAL_CATEGORY_ID) ?? [];
 
   const updateParams = useCallback(
     (updates: Record<string, string | null>) => {
@@ -36,10 +39,12 @@ export default function DomesticToursPage() {
       });
       router.push(`${pathname}?${params.toString()}`);
     },
-    [searchParams, pathname, router]
+    [searchParams, pathname, router],
   );
 
   useEffect(() => {
+    if (prevSearchRef.current === debouncedSearch) return;
+    prevSearchRef.current = debouncedSearch;
     updateParams({ q: debouncedSearch || null, page: null });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch]);
@@ -52,7 +57,9 @@ export default function DomesticToursPage() {
     _limit: PAGE_SIZE,
   });
 
-  const totalPages = data ? Math.max(1, Math.ceil(data.totalCount / PAGE_SIZE)) : 1;
+  const totalPages = data
+    ? Math.max(1, Math.ceil(data.totalCount / PAGE_SIZE))
+    : 1;
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10">
@@ -60,7 +67,9 @@ export default function DomesticToursPage() {
 
       <div className="flex items-center gap-3">
         <span className="h-6 w-1.5 rounded-full bg-primary" />
-        <h1 className="text-xl font-extrabold text-foreground sm:text-2xl">تورهای داخلی</h1>
+        <h1 className="text-xl font-extrabold text-foreground sm:text-2xl">
+          تورهای داخلی
+        </h1>
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -69,7 +78,9 @@ export default function DomesticToursPage() {
             onClick={() => updateParams({ category: null, page: null })}
             className={cn(
               "rounded-full px-4 py-2 text-sm font-semibold transition",
-              !categoryParam ? "bg-primary text-primary-foreground" : "bg-muted text-foreground hover:bg-muted/70"
+              !categoryParam
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-foreground hover:bg-muted/70",
             )}
           >
             همه
@@ -77,12 +88,14 @@ export default function DomesticToursPage() {
           {domesticCategories.map((cat) => (
             <button
               key={cat.id}
-              onClick={() => updateParams({ category: String(cat.id), page: null })}
+              onClick={() =>
+                updateParams({ category: String(cat.id), page: null })
+              }
               className={cn(
                 "rounded-full px-4 py-2 text-sm font-semibold transition",
                 categoryParam === String(cat.id)
                   ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-foreground hover:bg-muted/70"
+                  : "bg-muted text-foreground hover:bg-muted/70",
               )}
             >
               {cat.name}
@@ -91,7 +104,11 @@ export default function DomesticToursPage() {
         </div>
 
         <div className="w-full sm:w-64">
-          <SearchInput value={searchInput} onChange={setSearchInput} placeholder="جستجو در تورهای داخلی..." />
+          <SearchInput
+            value={searchInput}
+            onChange={setSearchInput}
+            placeholder="جستجو در تورهای داخلی..."
+          />
         </div>
       </div>
 
@@ -101,7 +118,11 @@ export default function DomesticToursPage() {
         <TourGrid tours={data?.tours ?? []} categories={categories} />
       )}
 
-      <Pagination page={page} totalPages={totalPages} onChange={(p) => updateParams({ page: String(p) })} />
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        onChange={(p) => updateParams({ page: String(p) })}
+      />
     </div>
   );
 }

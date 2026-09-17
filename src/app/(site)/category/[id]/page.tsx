@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCategories } from "@/src/hooks/useCategories";
 import { useSubcategories } from "@/src/hooks/useSubcategories";
@@ -27,6 +27,9 @@ export default function CategoryPage() {
 
   const [searchInput, setSearchInput] = useState(searchParams.get("q") ?? "");
   const debouncedSearch = useDebounce(searchInput, 400);
+  // مقدار سرچ رو نگه می‌داریم تا فقط وقتی *واقعاً* عوض شد صفحه رو ریست کنیم
+  // (نه هر بار که افکت اجرا می‌شه، چون تو Strict Mode هر افکتی دوبار اجرا می‌شه)
+  const prevSearchRef = useRef(debouncedSearch);
 
   const { data: categories } = useCategories();
   const { data: allSubcategories } = useSubcategories();
@@ -46,6 +49,8 @@ export default function CategoryPage() {
   );
 
   useEffect(() => {
+    if (prevSearchRef.current === debouncedSearch) return;
+    prevSearchRef.current = debouncedSearch;
     updateParams({ q: debouncedSearch || null, page: null });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch]);

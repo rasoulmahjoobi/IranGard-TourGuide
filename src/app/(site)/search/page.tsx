@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { X } from "lucide-react";
 import { useCategories } from "@/src/hooks/useCategories";
@@ -23,6 +23,8 @@ export default function SearchPage() {
   const [searchInput, setSearchInput] = useState(searchParams.get("q") ?? "");
   const debouncedSearch = useDebounce(searchInput, 400);
 
+  const prevSearchRef = useRef(debouncedSearch);
+
   const { data: categories } = useCategories();
 
   const updateParams = useCallback(
@@ -34,10 +36,12 @@ export default function SearchPage() {
       });
       router.push(`${pathname}?${params.toString()}`);
     },
-    [searchParams, pathname, router]
+    [searchParams, pathname, router],
   );
 
   useEffect(() => {
+    if (prevSearchRef.current === debouncedSearch) return;
+    prevSearchRef.current = debouncedSearch;
     updateParams({ q: debouncedSearch || null, page: null });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch]);
@@ -49,7 +53,9 @@ export default function SearchPage() {
     _limit: PAGE_SIZE,
   });
 
-  const totalPages = data ? Math.max(1, Math.ceil(data.totalCount / PAGE_SIZE)) : 1;
+  const totalPages = data
+    ? Math.max(1, Math.ceil(data.totalCount / PAGE_SIZE))
+    : 1;
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10">
@@ -61,7 +67,11 @@ export default function SearchPage() {
           </h1>
         </div>
         <div className="w-full sm:w-72">
-          <SearchInput value={searchInput} onChange={setSearchInput} placeholder="مقصد، نام تور..." />
+          <SearchInput
+            value={searchInput}
+            onChange={setSearchInput}
+            placeholder="مقصد، نام تور..."
+          />
         </div>
       </div>
 
@@ -86,7 +96,11 @@ export default function SearchPage() {
         <TourGrid tours={data?.tours ?? []} categories={categories} />
       )}
 
-      <Pagination page={page} totalPages={totalPages} onChange={(p) => updateParams({ page: String(p) })} />
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        onChange={(p) => updateParams({ page: String(p) })}
+      />
     </div>
   );
 }

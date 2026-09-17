@@ -1,4 +1,4 @@
-import { ChevronRight, ChevronLeft } from "lucide-react";
+import { ChevronRight, ChevronLeft, MoreHorizontal } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 
 interface PaginationProps {
@@ -7,10 +7,23 @@ interface PaginationProps {
   onChange: (page: number) => void;
 }
 
+/** صفحه‌ی اول، قبل/جاری/بعد، و صفحه‌ی آخر رو نشون می‌ده؛ بقیه با ... جمع می‌شن */
+function getPageItems(current: number, total: number): (number | "ellipsis")[] {
+  const pages = new Set<number>([1, current - 1, current, current + 1, total]);
+  const sorted = [...pages].filter((p) => p >= 1 && p <= total).sort((a, b) => a - b);
+  const items: (number | "ellipsis")[] = [];
+  let prev: number | null = null;
+  for (const p of sorted) {
+    if (prev !== null && p - prev > 1) items.push("ellipsis");
+    items.push(p);
+    prev = p;
+  }
+  return items;
+}
+
 export function Pagination({ page, totalPages, onChange }: PaginationProps) {
   if (totalPages <= 1) return null;
-
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+  const items = getPageItems(page, totalPages);
 
   return (
     <div className="flex items-center justify-center gap-2 pt-4">
@@ -23,20 +36,26 @@ export function Pagination({ page, totalPages, onChange }: PaginationProps) {
         <ChevronRight className="h-4 w-4" />
       </button>
 
-      {pages.map((p) => (
-        <button
-          key={p}
-          onClick={() => onChange(p)}
-          className={cn(
-            "flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition",
-            p === page
-              ? "bg-gradient-to-l from-primary to-coral text-primary-foreground shadow"
-              : "text-foreground hover:bg-muted"
-          )}
-        >
-          {p}
-        </button>
-      ))}
+      {items.map((item, i) =>
+        item === "ellipsis" ? (
+          <span key={`e-${i}`} className="flex h-9 w-9 items-center justify-center text-muted-foreground">
+            <MoreHorizontal className="h-4 w-4" />
+          </span>
+        ) : (
+          <button
+            key={item}
+            onClick={() => onChange(item)}
+            className={cn(
+              "flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition",
+              item === page
+                ? "bg-gradient-to-l from-primary to-coral text-primary-foreground shadow"
+                : "text-foreground hover:bg-muted"
+            )}
+          >
+            {item}
+          </button>
+        )
+      )}
 
       <button
         onClick={() => onChange(page + 1)}

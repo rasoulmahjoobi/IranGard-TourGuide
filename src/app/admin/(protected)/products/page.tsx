@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Plus } from "lucide-react";
 import { useCategories } from "@/src/hooks/useCategories";
 import { useTours } from "@/src/hooks/useTours";
@@ -8,15 +9,21 @@ import { useDebounce } from "@/src/hooks/useDebounce";
 import { TourImage } from "@/src/components/tour/TourImage";
 import { getCategoryGradient } from "@/src/lib/tourVisuals";
 import { formatPrice } from "@/src/lib/format";
-import { SearchInput, Select, Button, AdminPagination } from "@/src/components/ui";
+import { SearchInput, Select, Button, Pagination } from "@/src/components/ui";
 
 const PAGE_SIZE = 5;
 
 export default function AdminProductsPage() {
-  const [search, setSearch] = useState("");
-  const [categoryId, setCategoryId] = useState("");
-  const [page, setPage] = useState(1);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const categoryId = searchParams.get("category") ?? "";
+  const page = Number(searchParams.get("page") ?? "1");
+
+  const [search, setSearch] = useState(searchParams.get("q") ?? "");
   const debouncedSearch = useDebounce(search, 400);
+  const prevSearchRef = useRef(debouncedSearch);
 
   const { data: categories } = useCategories();
   const { data, isLoading } = useTours({
@@ -26,9 +33,24 @@ export default function AdminProductsPage() {
     _limit: PAGE_SIZE,
   });
 
+  const updateParams = useCallback(
+    (updates: Record<string, string | null>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || value === "") params.delete(key);
+        else params.set(key, value);
+      });
+      router.push(`${pathname}?${params.toString()}`);
+    },
+    [searchParams, pathname, router]
+  );
+
   useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch, categoryId]);
+    if (prevSearchRef.current === debouncedSearch) return;
+    prevSearchRef.current = debouncedSearch;
+    updateParams({ q: debouncedSearch || null, page: null });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch]);
 
   const totalPages = data ? Math.max(1, Math.ceil(data.totalCount / PAGE_SIZE)) : 1;
   const categoryName = (id: number) => categories?.find((c) => c.id === id)?.name ?? "-";
@@ -47,7 +69,11 @@ export default function AdminProductsPage() {
         <div className="sm:w-64">
           <SearchInput value={search} onChange={setSearch} placeholder="جستجوی نام تور..." />
         </div>
-        <Select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="sm:w-56">
+        <Select
+          value={categoryId}
+          onChange={(e) => updateParams({ category: e.target.value || null, page: null })}
+          className="sm:w-56"
+        >
           <option value="">همه دسته‌بندی‌ها</option>
           {categories?.map((c) => (
             <option key={c.id} value={c.id}>
@@ -105,7 +131,7 @@ export default function AdminProductsPage() {
         </table>
       </div>
 
-      <AdminPagination page={page} totalPages={totalPages} onChange={setPage} />
+      <Pagination page={page} totalPages={totalPages} onChange={(p) => updateParams({ page: String(p) })} />
     </div>
   );
 }

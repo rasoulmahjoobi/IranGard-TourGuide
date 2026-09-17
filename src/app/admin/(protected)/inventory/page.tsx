@@ -1,14 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTours } from "@/src/hooks/useTours";
-import { Button, AdminPagination } from "@/src/components/ui";
+import { Button, Pagination } from "@/src/components/ui";
 
 const PAGE_SIZE = 5;
 
 export default function AdminInventoryPage() {
-  const [page, setPage] = useState(1);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const page = Number(searchParams.get("page") ?? "1");
+
   const { data, isLoading } = useTours({ _page: page, _limit: PAGE_SIZE });
+
+  const updateParams = useCallback(
+    (updates: Record<string, string | null>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || value === "") params.delete(key);
+        else params.set(key, value);
+      });
+      router.push(`${pathname}?${params.toString()}`);
+    },
+    [searchParams, pathname, router]
+  );
 
   const totalPages = data ? Math.max(1, Math.ceil(data.totalCount / PAGE_SIZE)) : 1;
 
@@ -59,7 +76,7 @@ export default function AdminInventoryPage() {
         </table>
       </div>
 
-      <AdminPagination page={page} totalPages={totalPages} onChange={setPage} />
+      <Pagination page={page} totalPages={totalPages} onChange={(p) => updateParams({ page: String(p) })} />
 
       <p className="text-xs text-muted-foreground">
         * این جدول فعلاً نمایشی است؛ ذخیره‌سازی واقعی در فاز بعدی اضافه می‌شود.

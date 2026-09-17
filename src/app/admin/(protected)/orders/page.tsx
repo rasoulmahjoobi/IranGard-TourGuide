@@ -1,18 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowDownUp } from "lucide-react";
 import { useOrders } from "@/src/hooks/useOrders";
 import { formatPrice } from "@/src/lib/format";
-import { AdminPagination } from "@/src/components/ui";
+import { Pagination } from "@/src/components/ui";
 import { cn } from "@/src/lib/utils";
 
 const PAGE_SIZE = 5;
 
 export default function AdminOrdersPage() {
-  const [delivered, setDelivered] = useState<"false" | "true">("false");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [page, setPage] = useState(1);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const delivered = (searchParams.get("delivered") as "false" | "true") ?? "false";
+  const sortOrder = (searchParams.get("sort") as "asc" | "desc") ?? "desc";
+  const page = Number(searchParams.get("page") ?? "1");
 
   const { data, isLoading } = useOrders({
     delivered,
@@ -22,9 +27,17 @@ export default function AdminOrdersPage() {
     _limit: PAGE_SIZE,
   });
 
-  useEffect(() => {
-    setPage(1);
-  }, [delivered, sortOrder]);
+  const updateParams = useCallback(
+    (updates: Record<string, string | null>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || value === "") params.delete(key);
+        else params.set(key, value);
+      });
+      router.push(`${pathname}?${params.toString()}`);
+    },
+    [searchParams, pathname, router]
+  );
 
   const totalPages = data ? Math.max(1, Math.ceil(data.totalCount / PAGE_SIZE)) : 1;
   const toPersianDate = (ts: number) => new Date(ts).toLocaleDateString("fa-IR");
@@ -38,7 +51,7 @@ export default function AdminOrdersPage() {
           <input
             type="radio"
             checked={delivered === "false"}
-            onChange={() => setDelivered("false")}
+            onChange={() => updateParams({ delivered: null, page: null })}
             className="accent-primary"
           />
           سفارش‌های در انتظار ارسال
@@ -47,7 +60,7 @@ export default function AdminOrdersPage() {
           <input
             type="radio"
             checked={delivered === "true"}
-            onChange={() => setDelivered("true")}
+            onChange={() => updateParams({ delivered: "true", page: null })}
             className="accent-primary"
           />
           سفارش‌های تحویل شده
@@ -62,7 +75,9 @@ export default function AdminOrdersPage() {
               <th className="px-4 py-3 text-right">مجموع مبلغ</th>
               <th className="px-4 py-3 text-right">
                 <button
-                  onClick={() => setSortOrder((o) => (o === "asc" ? "desc" : "asc"))}
+                  onClick={() =>
+                    updateParams({ sort: sortOrder === "asc" ? "desc" : "asc", page: null })
+                  }
                   className="flex items-center gap-1 hover:text-foreground"
                 >
                   زمان ثبت سفارش
@@ -103,7 +118,7 @@ export default function AdminOrdersPage() {
         </table>
       </div>
 
-      <AdminPagination page={page} totalPages={totalPages} onChange={setPage} />
+      <Pagination page={page} totalPages={totalPages} onChange={(p) => updateParams({ page: String(p) })} />
     </div>
   );
 }
