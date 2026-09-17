@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import { useCategories } from "@/src/hooks/useCategories";
 import { useTours } from "@/src/hooks/useTours";
@@ -8,20 +8,29 @@ import { useDebounce } from "@/src/hooks/useDebounce";
 import { TourImage } from "@/src/components/tour/TourImage";
 import { getCategoryGradient } from "@/src/lib/tourVisuals";
 import { formatPrice } from "@/src/lib/format";
-import { SearchInput, Select, Button } from "@/src/components/ui";
+import { SearchInput, Select, Button, AdminPagination } from "@/src/components/ui";
+
+const PAGE_SIZE = 5;
 
 export default function AdminProductsPage() {
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState("");
+  const [page, setPage] = useState(1);
   const debouncedSearch = useDebounce(search, 400);
 
   const { data: categories } = useCategories();
   const { data, isLoading } = useTours({
     q: debouncedSearch || undefined,
     category: categoryId ? Number(categoryId) : undefined,
-    _limit: 50,
+    _page: page,
+    _limit: PAGE_SIZE,
   });
 
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, categoryId]);
+
+  const totalPages = data ? Math.max(1, Math.ceil(data.totalCount / PAGE_SIZE)) : 1;
   const categoryName = (id: number) => categories?.find((c) => c.id === id)?.name ?? "-";
 
   return (
@@ -95,6 +104,8 @@ export default function AdminProductsPage() {
           </tbody>
         </table>
       </div>
+
+      <AdminPagination page={page} totalPages={totalPages} onChange={setPage} />
     </div>
   );
 }

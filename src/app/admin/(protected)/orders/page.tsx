@@ -1,21 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowDownUp } from "lucide-react";
 import { useOrders } from "@/src/hooks/useOrders";
 import { formatPrice } from "@/src/lib/format";
+import { AdminPagination } from "@/src/components/ui";
 import { cn } from "@/src/lib/utils";
+
+const PAGE_SIZE = 5;
 
 export default function AdminOrdersPage() {
   const [delivered, setDelivered] = useState<"false" | "true">("false");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [page, setPage] = useState(1);
 
-  const { data: orders, isLoading } = useOrders({
+  const { data, isLoading } = useOrders({
     delivered,
     _sort: "createdAt",
     _order: sortOrder,
+    _page: page,
+    _limit: PAGE_SIZE,
   });
 
+  useEffect(() => {
+    setPage(1);
+  }, [delivered, sortOrder]);
+
+  const totalPages = data ? Math.max(1, Math.ceil(data.totalCount / PAGE_SIZE)) : 1;
   const toPersianDate = (ts: number) => new Date(ts).toLocaleDateString("fa-IR");
 
   return (
@@ -69,14 +80,14 @@ export default function AdminOrdersPage() {
                 </td>
               </tr>
             )}
-            {!isLoading && orders?.length === 0 && (
+            {!isLoading && data?.orders.length === 0 && (
               <tr>
                 <td colSpan={4} className="px-4 py-6 text-center text-muted-foreground">
                   سفارشی یافت نشد
                 </td>
               </tr>
             )}
-            {orders?.map((order) => (
+            {data?.orders.map((order) => (
               <tr key={order.id} className="border-b border-border last:border-0">
                 <td className="px-4 py-3 font-medium text-foreground">
                   {order.username} {order.lastname}
@@ -91,6 +102,8 @@ export default function AdminOrdersPage() {
           </tbody>
         </table>
       </div>
+
+      <AdminPagination page={page} totalPages={totalPages} onChange={setPage} />
     </div>
   );
 }

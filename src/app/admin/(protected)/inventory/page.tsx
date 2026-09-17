@@ -1,10 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import { useTours } from "@/src/hooks/useTours";
-import { Button } from "@/src/components/ui";
+import { Button, AdminPagination } from "@/src/components/ui";
+
+const PAGE_SIZE = 5;
 
 export default function AdminInventoryPage() {
-  const { data, isLoading } = useTours({ _limit: 50 });
+  const [page, setPage] = useState(1);
+  const { data, isLoading } = useTours({ _page: page, _limit: PAGE_SIZE });
+
+  const totalPages = data ? Math.max(1, Math.ceil(data.totalCount / PAGE_SIZE)) : 1;
 
   return (
     <div className="flex flex-col gap-6">
@@ -52,6 +58,8 @@ export default function AdminInventoryPage() {
           </tbody>
         </table>
       </div>
+
+      <AdminPagination page={page} totalPages={totalPages} onChange={setPage} />
 
       <p className="text-xs text-muted-foreground">
         * این جدول فعلاً نمایشی است؛ ذخیره‌سازی واقعی در فاز بعدی اضافه می‌شود.

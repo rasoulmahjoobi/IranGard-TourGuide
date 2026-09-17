@@ -5,9 +5,17 @@ export interface GetOrdersParams {
   delivered?: string;
   _sort?: string;
   _order?: "asc" | "desc";
+  _page?: number;
+  _limit?: number;
 }
 
-export async function getOrders(params: GetOrdersParams = {}): Promise<Order[]> {
-  const { data } = await apiClient.get<Order[]>("/orders", { params });
-  return data;
+export interface OrdersResult {
+  orders: Order[];
+  totalCount: number;
+}
+
+export async function getOrders(params: GetOrdersParams = {}): Promise<OrdersResult> {
+  const { data, headers } = await apiClient.get<Order[]>("/orders", { params });
+  const totalCount = Number(headers["x-total-count"] ?? data.length);
+  return { orders: data, totalCount };
 }

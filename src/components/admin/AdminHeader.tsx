@@ -30,7 +30,7 @@ export  function AdminHeader() {
                 className={cn(
                   "flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition-all",
                   active
-                    ? "bg-gradient-to-l from-primary to-coral text-primary-foreground shadow-md shadow-primary/20"
+                    ? "bg-linear-to-l from-primary to-coral text-primary-foreground shadow-md shadow-primary/20"
                     : "text-muted-foreground hover:bg-card hover:text-foreground"
                 )}
               >
