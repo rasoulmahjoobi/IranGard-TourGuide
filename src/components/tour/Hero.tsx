@@ -18,7 +18,6 @@ export function Hero() {
     const params = new URLSearchParams();
     if (destination.trim()) params.set("q", destination.trim());
     if (date) {
-      // تبدیل تاریخ شمسی انتخاب‌شده به میلادی ISO، چون دیتای بک‌اند میلادیه
       const gregorianDate = date.convert(gregorian, gregorian_en);
       params.set("date", gregorianDate.format("YYYY-MM-DD"));
     }
@@ -26,10 +25,13 @@ export function Hero() {
   };
 
   return (
-    <section className="relative overflow-hidden rounded-b-[2.5rem] bg-secondary px-4 py-20 text-white sm:py-28">
-      <div className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 animate-blob rounded-full bg-primary/40 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-24 -left-24 h-72 w-72 animate-blob rounded-full bg-turquoise/40 blur-3xl [animation-delay:2s]" />
-      <div className="pointer-events-none absolute top-1/3 left-1/4 h-40 w-40 animate-float rounded-full bg-accent/30 blur-2xl" />
+    <section className="relative rounded-b-[2.5rem] bg-secondary px-4 py-20 text-white sm:py-28">
+      {/* دایره‌های تزئینی — فقط همین‌ها داخل یه لایه‌ی overflow-hidden جدا هستن، نه کل بخش */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-b-[2.5rem]">
+        <div className="absolute -top-24 -right-24 h-72 w-72 animate-blob rounded-full bg-primary/40 blur-3xl" />
+        <div className="absolute -bottom-24 -left-24 h-72 w-72 animate-blob rounded-full bg-turquoise/40 blur-3xl [animation-delay:2s]" />
+        <div className="absolute top-1/3 left-1/4 h-40 w-40 animate-float rounded-full bg-accent/30 blur-2xl" />
+      </div>
 
       <div className="relative mx-auto flex max-w-4xl flex-col items-center gap-6 text-center">
         <span className="animate-fade-up rounded-full border border-white/30 bg-white/10 px-4 py-1.5 text-xs font-semibold backdrop-blur-sm">
@@ -44,7 +46,7 @@ export function Hero() {
 
         <form
           onSubmit={handleSearch}
-          className="animate-fade-up flex w-full max-w-2xl flex-col gap-2 rounded-2xl bg-white p-2 shadow-2xl [animation-delay:300ms] sm:flex-row sm:rounded-full"
+          className="animate-fade-up relative z-10 flex w-full max-w-2xl flex-col gap-2 rounded-2xl bg-white p-2 shadow-2xl [animation-delay:300ms] sm:flex-row sm:rounded-full"
         >
           <div className="flex flex-1 items-center gap-2 rounded-full px-4 py-2.5">
             <MapPin className="h-4 w-4 shrink-0 text-primary" />
