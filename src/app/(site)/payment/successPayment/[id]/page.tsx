@@ -1,5 +1,5 @@
 export default function Payment(){
     return(
-        <div>Payment</div>
+        <div>Successful Payment</div>
     )
 }
