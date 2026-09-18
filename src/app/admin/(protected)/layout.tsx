@@ -1,11 +1,10 @@
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+import { AdminHeader } from "@/src/components/admin/AdminHeader";
+
+export default function AdminProtectedLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <main>{children}</main>
+      <AdminHeader />
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
     </>
   );
 }
