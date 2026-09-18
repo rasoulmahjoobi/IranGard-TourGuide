@@ -44,7 +44,10 @@ export function SiteHeader() {
           >
             مدیریت
           </Link>
-          <button className="rounded-full border border-border p-2 text-foreground md:hidden" aria-label="منو">
+          <button
+            className="rounded-full border border-border p-2 text-foreground md:hidden"
+            aria-label="منو"
+          >
             <Menu className="h-5 w-5" />
           </button>
         </div>
