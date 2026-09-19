@@ -10,6 +10,7 @@ import { TourGridSkeleton } from "@/src/components/tour/TourGridSkeleton";
 import { SiteSidebar } from "@/src/components/tour/SiteSidebar";
 import { SearchInput, Pagination } from "@/src/components/ui";
 import { cn } from "@/src/lib/utils";
+import { useSubcategories } from "@/src/hooks/useSubcategories";
 
 const PAGE_SIZE = 8;
 const INTERNATIONAL_CATEGORY_ID = 4;
@@ -27,6 +28,7 @@ export default function DomesticToursPage() {
   const prevSearchRef = useRef(debouncedSearch);
 
   const { data: categories } = useCategories();
+  const { data: allSubcategories } = useSubcategories();
   const domesticCategories =
     categories?.filter((c) => c.id !== INTERNATIONAL_CATEGORY_ID) ?? [];
 
@@ -63,7 +65,10 @@ export default function DomesticToursPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10">
-      <SiteSidebar />
+      <SiteSidebar
+        categories={categories ?? []}
+        subcategories={allSubcategories ?? []}
+      />
 
       <div className="flex items-center gap-3">
         <span className="h-6 w-1.5 rounded-full bg-primary" />
