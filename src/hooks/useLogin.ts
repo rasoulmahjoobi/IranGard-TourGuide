@@ -2,17 +2,17 @@ import { useMutation } from "@tanstack/react-query";
 import { useDispatch } from "react-redux";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-import type { LoginValues } from "../lib/schemas/auth.schema";
-import { apiClient } from "../lib/apiClient";
-import { setCredentials } from "../store/authSlice";
-import { ROUTES } from "../lib/constants";
+import { apiClient } from "@/src/lib/apiClient";
+import { setCredentials } from "@/src/store/authSlice";
+import { setAuthCookies } from "@/src/lib/cookies";
+import type { LoginValues } from "@/src/lib/schemas/auth.schema";
+import { ROUTES } from "@/src/lib/constants";
 
 interface LoginResponse {
   accessToken: string;
   refreshToken: string;
 }
 
-// دیکد ساده‌ی JWT برای خوندن username/role/name از payload بدون نیاز به کتابخونه‌ی جدا
 function decodeJwt(token: string) {
   const payload = token.split(".")[1];
   return JSON.parse(atob(payload));
@@ -36,6 +36,8 @@ export function useLogin() {
           refreshToken: data.refreshToken,
         })
       );
+      // ذخیره‌ی توکن تو کوکی — همینی که middleware براش چک می‌کنه
+      setAuthCookies(data.accessToken, data.refreshToken);
       toast.success("با موفقیت وارد شدید");
       router.push(ROUTES.adminProducts);
     },
