@@ -1,7 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
+import {
+  useParams,
+  usePathname,
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
 import { useCategories } from "@/src/hooks/useCategories";
 import { useSubcategories } from "@/src/hooks/useSubcategories";
 import { useTours } from "@/src/hooks/useTours";
@@ -34,7 +39,8 @@ export default function CategoryPage() {
   const { data: categories } = useCategories();
   const { data: allSubcategories } = useSubcategories();
   const category = categories?.find((c) => c.id === categoryId);
-  const subcategories = allSubcategories?.filter((s) => s.category === categoryId) ?? [];
+  const subcategories =
+    allSubcategories?.filter((s) => s.category === categoryId) ?? [];
 
   const updateParams = useCallback(
     (updates: Record<string, string | null>) => {
@@ -45,7 +51,7 @@ export default function CategoryPage() {
       });
       router.push(`${pathname}?${params.toString()}`);
     },
-    [searchParams, pathname, router]
+    [searchParams, pathname, router],
   );
 
   useEffect(() => {
@@ -63,11 +69,16 @@ export default function CategoryPage() {
     _limit: PAGE_SIZE,
   });
 
-  const totalPages = data ? Math.max(1, Math.ceil(data.totalCount / PAGE_SIZE)) : 1;
+  const totalPages = data
+    ? Math.max(1, Math.ceil(data.totalCount / PAGE_SIZE))
+    : 1;
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10">
-      <SiteSidebar />
+      <SiteSidebar
+        categories={categories ?? []}
+        subcategories={allSubcategories ?? []}
+      />
 
       <div className="flex items-center gap-3">
         <span className="h-6 w-1.5 rounded-full bg-primary" />
@@ -84,7 +95,7 @@ export default function CategoryPage() {
               "rounded-full px-4 py-2 text-sm font-semibold transition",
               !subcategoryParam
                 ? "bg-primary text-primary-foreground"
-                : "bg-muted text-foreground hover:bg-muted/70"
+                : "bg-muted text-foreground hover:bg-muted/70",
             )}
           >
             همه
@@ -92,12 +103,14 @@ export default function CategoryPage() {
           {subcategories.map((sub) => (
             <button
               key={sub.id}
-              onClick={() => updateParams({ subcategory: String(sub.id), page: null })}
+              onClick={() =>
+                updateParams({ subcategory: String(sub.id), page: null })
+              }
               className={cn(
                 "rounded-full px-4 py-2 text-sm font-semibold transition",
                 subcategoryParam === String(sub.id)
                   ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-foreground hover:bg-muted/70"
+                  : "bg-muted text-foreground hover:bg-muted/70",
               )}
             >
               {sub.name}
@@ -120,7 +133,11 @@ export default function CategoryPage() {
         <TourGrid tours={data?.tours ?? []} categories={categories} />
       )}
 
-      <Pagination page={page} totalPages={totalPages} onChange={(p) => updateParams({ page: String(p) })} />
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        onChange={(p) => updateParams({ page: String(p) })}
+      />
     </div>
   );
 }

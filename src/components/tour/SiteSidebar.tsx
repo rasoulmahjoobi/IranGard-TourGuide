@@ -14,11 +14,10 @@ import {
   MapPin,
   type LucideIcon,
 } from "lucide-react";
-import { useCategories } from "@/src/hooks/useCategories";
-import { useSubcategories } from "@/src/hooks/useSubcategories";
 import { useTours } from "@/src/hooks/useTours";
 import { ROUTES } from "@/src/lib/constants";
 import { cn } from "@/src/lib/utils";
+import type { Category, Subcategory } from "@/src/types/tour";
 
 const iconMap: Record<number, { icon: LucideIcon; color: string; bg: string }> = {
   1: { icon: Mountain, color: "text-turquoise", bg: "bg-turquoise/10" },
@@ -28,18 +27,21 @@ const iconMap: Record<number, { icon: LucideIcon; color: string; bg: string }> =
 };
 const fallbackIcon = { icon: Compass, color: "text-secondary", bg: "bg-secondary/10" };
 
-export function SiteSidebar() {
+interface SiteSidebarProps {
+  categories: Category[];
+  subcategories: Subcategory[];
+}
+
+export function SiteSidebar({ categories, subcategories }: SiteSidebarProps) {
   const [open, setOpen] = useState(false);
   const [rootOpen, setRootOpen] = useState(false);
   const [openCats, setOpenCats] = useState<Set<number>>(new Set());
   const [openSubs, setOpenSubs] = useState<Set<number>>(new Set());
 
-  const { data: categories } = useCategories();
-  const { data: subcategories } = useSubcategories();
+  // تعداد تور هر زیردسته همچنان زنده (کلاینت) گرفته می‌شه چون واقعاً پویاست
   const { data: toursData } = useTours({ _limit: 100 });
   const tours = toursData?.tours ?? [];
 
-  // قفل اسکرول پشت کشو وقتی بازه
   useEffect(() => {
     if (!open) return;
     const original = document.body.style.overflow;
@@ -65,7 +67,6 @@ export function SiteSidebar() {
 
   return (
     <>
-      {/* دکمه‌ی باز/بسته کردن کشو */}
       <button
         onClick={() => setOpen(true)}
         className="flex w-fit items-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground shadow-sm transition hover:border-primary hover:text-primary"
@@ -74,7 +75,6 @@ export function SiteSidebar() {
         دسته‌بندی تورها
       </button>
 
-      {/* پس‌زمینه‌ی تیره پشت کشو */}
       <div
         onClick={() => setOpen(false)}
         className={cn(
@@ -83,7 +83,6 @@ export function SiteSidebar() {
         )}
       />
 
-      {/* پنل کشویی */}
       <aside
         className={cn(
           "fixed inset-y-0 right-0 z-50 flex w-[320px] max-w-[85vw] flex-col bg-card shadow-2xl transition-transform duration-300 ease-out",
@@ -102,7 +101,6 @@ export function SiteSidebar() {
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-3">
-          {/* سطح ۰: کل تورها */}
           <button
             onClick={() => setRootOpen((v) => !v)}
             className="flex w-full items-center gap-2.5 rounded-xl px-3 py-3 text-sm font-bold text-foreground transition hover:bg-muted"
@@ -114,12 +112,11 @@ export function SiteSidebar() {
             <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", rootOpen && "rotate-180")} />
           </button>
 
-          {/* سطح ۱: دسته‌بندی‌ها */}
           {rootOpen && (
             <div className="animate-fade-in mr-3 flex flex-col gap-0.5 border-r-2 border-border pr-3 pt-1">
-              {categories?.map((cat) => {
+              {categories.map((cat) => {
                 const { icon: Icon, color, bg } = iconMap[cat.id] ?? fallbackIcon;
-                const subs = subcategories?.filter((s) => s.category === cat.id) ?? [];
+                const subs = subcategories.filter((s) => s.category === cat.id);
                 const catOpen = openCats.has(cat.id);
 
                 return (
@@ -137,7 +134,6 @@ export function SiteSidebar() {
                       />
                     </button>
 
-                    {/* سطح ۲: زیردسته‌ها */}
                     {catOpen && (
                       <div className="animate-fade-in mr-3 flex flex-col gap-0.5 border-r-2 border-border pr-3 pt-1">
                         {subs.length === 0 && (
@@ -163,7 +159,6 @@ export function SiteSidebar() {
                                 />
                               </button>
 
-                              {/* سطح ۳: محصولات (تورها) */}
                               {subOpen && (
                                 <div className="animate-fade-in mr-3 flex flex-col gap-0.5 border-r-2 border-border pr-3 pt-1">
                                   {subTours.length === 0 && (

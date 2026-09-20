@@ -1,8 +1,6 @@
-"use client";
-
 import Link from "next/link";
 import { Mountain, Landmark, Waves, Plane, Compass, type LucideIcon } from "lucide-react";
-import { useCategories } from "@/src/hooks/useCategories";
+import type { Category } from "@/src/types/tour";
 import { ROUTES } from "@/src/lib/constants";
 import { cn } from "@/src/lib/utils";
 
@@ -14,22 +12,10 @@ const iconMap: Record<number, { icon: LucideIcon; color: string }> = {
 };
 const fallbackIcon = { icon: Compass, color: "text-secondary" };
 
-export function CategoryChips() {
-  const { data: categories, isLoading } = useCategories();
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center gap-3">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-11 w-32 animate-pulse rounded-full bg-muted" />
-        ))}
-      </div>
-    );
-  }
-
+export function CategoryChips({ categories }: { categories: Category[] }) {
   return (
     <div className="-mx-4 flex gap-3 overflow-x-auto px-4 py-2 sm:mx-0 sm:flex-wrap sm:justify-center sm:px-0">
-      {categories?.map((cat, i) => {
+      {categories.map((cat, i) => {
         const { icon: Icon, color } = iconMap[cat.id] ?? fallbackIcon;
         return (
           <Link
