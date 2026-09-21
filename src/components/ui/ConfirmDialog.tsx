@@ -31,7 +31,7 @@ export function ConfirmDialog({
           </Button>
           <Button
             onClick={onConfirm}
-            className={danger ? "!bg-gradient-to-l !from-red-600 !to-red-500" : undefined}
+            className={danger ? "bg-linear-to-l! from-red-600! to-red-500!" : undefined}
           >
             {confirmLabel}
           </Button>
