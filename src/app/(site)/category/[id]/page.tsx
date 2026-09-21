@@ -76,6 +76,8 @@ export default function CategoryPage() {
     q: debouncedSearch || undefined,
     _page: page,
     _limit: PAGE_SIZE,
+    _sort: "createdAt",
+    _order: "desc",
   });
 
   const totalPages = data

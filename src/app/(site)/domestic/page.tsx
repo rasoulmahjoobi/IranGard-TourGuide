@@ -66,6 +66,8 @@ export default function DomesticToursPage() {
     q: debouncedSearch || undefined,
     _page: page,
     _limit: PAGE_SIZE,
+    _sort: "createdAt",
+    _order: "desc",
   });
 
   const totalPages = data
@@ -128,7 +130,7 @@ export default function DomesticToursPage() {
       ) : (
         <TourGrid tours={data?.tours ?? []} categories={categories} />
       )}
-      
+
       <Pagination
         page={page}
         totalPages={totalPages}

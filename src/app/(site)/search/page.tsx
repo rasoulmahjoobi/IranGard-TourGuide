@@ -60,6 +60,8 @@ export default function SearchPage() {
     departureFrom: selectedDate || undefined,
     _page: page,
     _limit: PAGE_SIZE,
+    _sort: "createdAt",
+    _order: "desc",
   });
 
   const totalPages = data
