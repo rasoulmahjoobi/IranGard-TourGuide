@@ -25,6 +25,9 @@ export function PersianDatePicker({
       calendar={persian}
       locale={persian_fa}
       calendarPosition="bottom-right"
+      // با کلیک بیرون از تقویم، بدون هیچ تغییری بسته بشه — دقیقاً مثل مودال‌ها
+      onClose={() => true}
+      arrow={false}
       inputClass={cn(
         "w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground",
         className

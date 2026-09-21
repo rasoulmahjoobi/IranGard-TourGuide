@@ -11,7 +11,7 @@ import { logout } from "@/src/store/authSlice";
 import { clearAuthCookies } from "@/src/lib/cookies";
 
 const tabs = [
-  { href: ROUTES.adminProducts, label: "کالاها", icon: Package },
+  { href: ROUTES.adminProducts, label: "تورها", icon: Package },
   { href: ROUTES.adminInventory, label: "موجودی و قیمت‌ها", icon: DollarSign },
   { href: ROUTES.adminOrders, label: "سفارش‌ها", icon: ClipboardList },
 ];

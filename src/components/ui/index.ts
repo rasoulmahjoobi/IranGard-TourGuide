@@ -4,6 +4,7 @@ export * from "./PasswordInput";
 export * from "./Select";
 export * from "./Textarea";
 export * from "./Modal";
+export * from "./ConfirmDialog";
 export * from "./SearchInput";
 export * from "./Pagination";
 export * from "./PersianDatePicker";

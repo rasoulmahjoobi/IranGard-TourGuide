@@ -2,16 +2,29 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Plus } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
+import { toast } from "react-toastify";
 import { useCategories } from "@/src/hooks/useCategories";
+import { useSubcategories } from "@/src/hooks/useSubcategories";
 import { useTours } from "@/src/hooks/useTours";
 import { useDebounce } from "@/src/hooks/useDebounce";
+import { useCreateTour, useUpdateTour, useDeleteTour } from "@/src/hooks/useTourMutations";
 import { TourImage } from "@/src/components/tour/TourImage";
 import { getCategoryGradient } from "@/src/lib/tourVisuals";
 import { formatPrice } from "@/src/lib/format";
-import { SearchInput, Select, Button, Pagination } from "@/src/components/ui";
+import { SearchInput, Select, Button, Pagination, ConfirmDialog } from "@/src/components/ui";
+import { TourFormModal, type TourFormValues } from "@/src/components/admin/TourFormModal";
+import type { Tour } from "@/src/types/tour";
 
 const PAGE_SIZE = 5;
+
+type SubmittedValues = TourFormValues & { thumbnail: string; departureDate: string; description: string };
+
+type PendingAction =
+  | { type: "add"; values: SubmittedValues }
+  | { type: "edit"; tour: Tour; values: SubmittedValues }
+  | { type: "delete"; id: number; name: string }
+  | null;
 
 export default function AdminProductsPage() {
   const router = useRouter();
@@ -26,12 +39,17 @@ export default function AdminProductsPage() {
   const prevSearchRef = useRef(debouncedSearch);
 
   const { data: categories } = useCategories();
+  const { data: subcategories } = useSubcategories();
   const { data, isLoading } = useTours({
     q: debouncedSearch || undefined,
     category: categoryId ? Number(categoryId) : undefined,
     _page: page,
     _limit: PAGE_SIZE,
   });
+
+  const createMutation = useCreateTour();
+  const updateMutation = useUpdateTour();
+  const deleteMutation = useDeleteTour();
 
   const updateParams = useCallback(
     (updates: Record<string, string | null>) => {
@@ -52,16 +70,108 @@ export default function AdminProductsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch]);
 
-  const totalPages = data ? Math.max(1, Math.ceil(data.totalCount / PAGE_SIZE)) : 1;
   const categoryName = (id: number) => categories?.find((c) => c.id === id)?.name ?? "-";
+  const totalPages = data ? Math.max(1, Math.ceil(data.totalCount / PAGE_SIZE)) : 1;
+
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingTour, setEditingTour] = useState<Tour | undefined>(undefined);
+
+  const openAdd = () => {
+    setEditingTour(undefined);
+    setFormOpen(true);
+  };
+  const openEdit = (tour: Tour) => {
+    setEditingTour(tour);
+    setFormOpen(true);
+  };
+
+  const [pending, setPending] = useState<PendingAction>(null);
+
+  const handleFormSubmit = (values: SubmittedValues) => {
+    setFormOpen(false);
+    if (editingTour) {
+      setPending({ type: "edit", tour: editingTour, values });
+    } else {
+      setPending({ type: "add", values });
+    }
+  };
+
+  const handleDeleteClick = (tour: Tour) => {
+    setPending({ type: "delete", id: tour.id, name: tour.name });
+  };
+
+  const isMutating = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
+
+  const confirmPending = () => {
+    if (!pending) return;
+
+    if (pending.type === "add") {
+      createMutation.mutate(
+        {
+          name: pending.values.name,
+          brand: "ایران گرد تور",
+          image: pending.values.thumbnail ? [pending.values.thumbnail] : [],
+          thumbnail: pending.values.thumbnail,
+          price: pending.values.price,
+          quantity: pending.values.quantity,
+          category: Number(pending.values.category),
+          subcategory: Number(pending.values.subcategory),
+          location: pending.values.location,
+          duration: pending.values.duration,
+          rating: 0, // امتیاز جدید، تا زمانی که مشتری نظر ثبت نکرده صفر است
+          departureDate: pending.values.departureDate,
+          description: `<p>${pending.values.description}</p>`,
+        },
+        {
+          onSuccess: () => toast.success("تور جدید با موفقیت اضافه شد"),
+          onError: () => toast.error("خطا در افزودن تور"),
+        }
+      );
+    }
+
+    if (pending.type === "edit") {
+      updateMutation.mutate(
+        {
+          id: pending.tour.id,
+          patch: {
+            name: pending.values.name,
+            thumbnail: pending.values.thumbnail || pending.tour.thumbnail,
+            image: pending.values.thumbnail ? [pending.values.thumbnail] : pending.tour.image,
+            price: pending.values.price,
+            quantity: pending.values.quantity,
+            category: Number(pending.values.category),
+            subcategory: Number(pending.values.subcategory),
+            location: pending.values.location,
+            duration: pending.values.duration,
+            // امتیاز عمداً اینجا آپدیت نمی‌شود — همیشه بر اساس نظرات مشتری‌ها می‌ماند
+            departureDate: pending.values.departureDate,
+            description: `<p>${pending.values.description}</p>`,
+          },
+        },
+        {
+          onSuccess: () => toast.success("تور با موفقیت ویرایش شد"),
+          onError: () => toast.error("خطا در ویرایش تور"),
+        }
+      );
+    }
+
+    if (pending.type === "delete") {
+      deleteMutation.mutate(pending.id, {
+        onSuccess: () => toast.success("تور حذف شد"),
+        onError: () => toast.error("خطا در حذف تور"),
+      });
+    }
+
+    setPending(null);
+  };
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-extrabold text-foreground">مدیریت کالاها</h1>
-        <Button className="flex w-fit items-center gap-1.5">
+        <h1 className="text-xl font-extrabold text-foreground">مدیریت تورها</h1>
+        <Button onClick={openAdd} className="flex w-fit items-center gap-1.5">
           <Plus className="h-4 w-4" />
-          افزودن کالا
+          افزودن تور
         </Button>
       </div>
 
@@ -88,7 +198,7 @@ export default function AdminProductsPage() {
           <thead>
             <tr className="border-b border-border bg-muted text-xs font-semibold text-muted-foreground">
               <th className="px-4 py-3 text-right">تصویر</th>
-              <th className="px-4 py-3 text-right">نام کالا</th>
+              <th className="px-4 py-3 text-right">نام تور</th>
               <th className="px-4 py-3 text-right">دسته بندی</th>
               <th className="px-4 py-3 text-right">قیمت</th>
               <th className="px-4 py-3"></th>
@@ -120,9 +230,21 @@ export default function AdminProductsPage() {
                 <td className="px-4 py-3 text-muted-foreground">{categoryName(tour.category)}</td>
                 <td className="px-4 py-3 text-accent-foreground">{formatPrice(tour.price)}</td>
                 <td className="px-4 py-3">
-                  <div className="flex gap-4 font-medium">
-                    <button className="text-primary hover:underline">ویرایش</button>
-                    <button className="text-red-600 hover:underline">حذف</button>
+                  <div className="flex gap-3 font-medium">
+                    <button
+                      onClick={() => openEdit(tour)}
+                      className="flex items-center gap-1 text-primary hover:underline"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      ویرایش
+                    </button>
+                    <button
+                      onClick={() => handleDeleteClick(tour)}
+                      className="flex items-center gap-1 text-red-600 hover:underline"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      حذف
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -132,6 +254,31 @@ export default function AdminProductsPage() {
       </div>
 
       <Pagination page={page} totalPages={totalPages} onChange={(p) => updateParams({ page: String(p) })} />
+
+      <TourFormModal
+        open={formOpen}
+        onClose={() => setFormOpen(false)}
+        onSubmit={handleFormSubmit}
+        categories={categories ?? []}
+        subcategories={subcategories ?? []}
+        initialTour={editingTour}
+      />
+
+      <ConfirmDialog
+        open={pending !== null}
+        title={pending?.type === "delete" ? "حذف تور" : pending?.type === "edit" ? "ویرایش تور" : "افزودن تور"}
+        description={
+          pending?.type === "delete"
+            ? `آیا از حذف «${pending.name}» مطمئن هستید؟ این عمل قابل بازگشت نیست.`
+            : pending?.type === "edit"
+              ? "آیا از ذخیره‌ی تغییرات این تور مطمئن هستید؟"
+              : "آیا از افزودن این تور جدید مطمئن هستید؟"
+        }
+        confirmLabel={isMutating ? "در حال پردازش..." : pending?.type === "delete" ? "حذف شود" : "ذخیره شود"}
+        danger={pending?.type === "delete"}
+        onConfirm={confirmPending}
+        onCancel={() => setPending(null)}
+      />
     </div>
   );
 }
