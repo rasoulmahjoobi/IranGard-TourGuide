@@ -24,7 +24,10 @@ apiClient.interceptors.request.use((config) => {
 });
 
 let isRefreshing = false;
-let pendingQueue: { resolve: (token: string) => void; reject: (err: unknown) => void }[] = [];
+let pendingQueue: {
+  resolve: (token: string) => void;
+  reject: (err: unknown) => void;
+}[] = [];
 
 apiClient.interceptors.response.use(
   (response) => response,
@@ -32,7 +35,8 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config;
 
     if (error.response?.status === 401 && !originalRequest._retry) {
-      const refreshToken = store.getState().auth.refreshToken || getRefreshTokenCookie();
+      const refreshToken =
+        store.getState().auth.refreshToken || getRefreshTokenCookie();
       if (!refreshToken) {
         store.dispatch(logout());
         clearAuthCookies();
@@ -55,7 +59,7 @@ apiClient.interceptors.response.use(
         const { data } = await axios.post(
           `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh-token`,
           {},
-          { headers: { refreshToken } }
+          { headers: { refreshToken } },
         );
         store.dispatch(setAccessToken(data.accessToken));
         updateAccessTokenCookie(data.accessToken); // کوکی هم آپدیت بشه
@@ -78,7 +82,11 @@ apiClient.interceptors.response.use(
       (typeof error.response?.data === "string" && error.response.data) ||
       error.response?.data?.message ||
       "خطایی رخ داد، دوباره تلاش کنید";
-    toast.error(message);
+
+    if (typeof window !== "undefined") {
+      toast.error(message);
+    }
+
     return Promise.reject(error);
-  }
+  },
 );

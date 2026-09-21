@@ -52,6 +52,15 @@ export default function SubcategoryPage() {
     [searchParams, pathname, router],
   );
 
+  const buildPageHref = useCallback(
+    (p: number) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("page", String(p));
+      return `${pathname}?${params.toString()}`;
+    },
+    [searchParams, pathname],
+  );
+
   useEffect(() => {
     if (prevSearchRef.current === debouncedSearch) return;
     prevSearchRef.current = debouncedSearch;
@@ -118,7 +127,7 @@ export default function SubcategoryPage() {
       <Pagination
         page={page}
         totalPages={totalPages}
-        onChange={(p) => updateParams({ page: String(p) })}
+        buildHref={buildPageHref}
       />
     </div>
   );

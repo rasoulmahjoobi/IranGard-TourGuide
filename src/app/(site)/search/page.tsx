@@ -39,6 +39,15 @@ export default function SearchPage() {
     [searchParams, pathname, router],
   );
 
+  const buildPageHref = useCallback(
+    (p: number) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("page", String(p));
+      return `${pathname}?${params.toString()}`;
+    },
+    [searchParams, pathname],
+  );
+
   useEffect(() => {
     if (prevSearchRef.current === debouncedSearch) return;
     prevSearchRef.current = debouncedSearch;
@@ -74,7 +83,6 @@ export default function SearchPage() {
           />
         </div>
       </div>
-
       {selectedDate && (
         <div className="flex items-center gap-2">
           <span className="flex items-center gap-2 rounded-full bg-turquoise/10 px-4 py-1.5 text-sm font-semibold text-turquoise">
@@ -89,17 +97,15 @@ export default function SearchPage() {
           </span>
         </div>
       )}
-
       {isLoading ? (
         <TourGridSkeleton count={PAGE_SIZE} />
       ) : (
         <TourGrid tours={data?.tours ?? []} categories={categories} />
       )}
-
       <Pagination
         page={page}
         totalPages={totalPages}
-        onChange={(p) => updateParams({ page: String(p) })}
+        buildHref={buildPageHref}
       />
     </div>
   );

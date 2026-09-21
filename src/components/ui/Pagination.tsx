@@ -1,13 +1,14 @@
+import Link from "next/link";
 import { ChevronRight, ChevronLeft, MoreHorizontal } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 
 interface PaginationProps {
   page: number;
   totalPages: number;
-  onChange: (page: number) => void;
+  /** برای هر شماره صفحه، آدرس کامل (href) رو می‌سازه — تا لینک واقعی باشه و بشه با کلیک راست تو تب جدید بازش کرد */
+  buildHref: (page: number) => string;
 }
 
-/** صفحه‌ی اول، قبل/جاری/بعد، و صفحه‌ی آخر رو نشون می‌ده؛ بقیه با ... جمع می‌شن */
 function getPageItems(current: number, total: number): (number | "ellipsis")[] {
   const pages = new Set<number>([1, current - 1, current, current + 1, total]);
   const sorted = [...pages].filter((p) => p >= 1 && p <= total).sort((a, b) => a - b);
@@ -21,20 +22,22 @@ function getPageItems(current: number, total: number): (number | "ellipsis")[] {
   return items;
 }
 
-export function Pagination({ page, totalPages, onChange }: PaginationProps) {
+export function Pagination({ page, totalPages, buildHref }: PaginationProps) {
   if (totalPages <= 1) return null;
   const items = getPageItems(page, totalPages);
 
   return (
     <div className="flex items-center justify-center gap-2 pt-4">
-      <button
-        onClick={() => onChange(page - 1)}
-        disabled={page === 1}
+      <Link
+        href={buildHref(Math.max(1, page - 1))}
         aria-label="صفحه قبل"
-        className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-foreground transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+        className={cn(
+          "flex h-9 w-9 items-center justify-center rounded-full border border-border text-foreground transition hover:border-primary hover:text-primary",
+          page === 1 && "pointer-events-none cursor-not-allowed opacity-40"
+        )}
       >
         <ChevronRight className="h-4 w-4" />
-      </button>
+      </Link>
 
       {items.map((item, i) =>
         item === "ellipsis" ? (
@@ -42,29 +45,31 @@ export function Pagination({ page, totalPages, onChange }: PaginationProps) {
             <MoreHorizontal className="h-4 w-4" />
           </span>
         ) : (
-          <button
+          <Link
             key={item}
-            onClick={() => onChange(item)}
+            href={buildHref(item)}
             className={cn(
               "flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition",
               item === page
-                ? "bg-gradient-to-l from-primary to-coral text-primary-foreground shadow"
+                ? "bg-linear-to-l from-primary to-coral text-primary-foreground shadow"
                 : "text-foreground hover:bg-muted"
             )}
           >
             {item}
-          </button>
+          </Link>
         )
       )}
 
-      <button
-        onClick={() => onChange(page + 1)}
-        disabled={page === totalPages}
+      <Link
+        href={buildHref(Math.min(totalPages, page + 1))}
         aria-label="صفحه بعد"
-        className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-foreground transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+        className={cn(
+          "flex h-9 w-9 items-center justify-center rounded-full border border-border text-foreground transition hover:border-primary hover:text-primary",
+          page === totalPages && "pointer-events-none cursor-not-allowed opacity-40"
+        )}
       >
         <ChevronLeft className="h-4 w-4" />
-      </button>
+      </Link>
     </div>
   );
 }

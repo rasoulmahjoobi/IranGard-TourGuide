@@ -39,16 +39,31 @@ export default function AdminInventoryPage() {
       });
       router.push(`${pathname}?${params.toString()}`);
     },
-    [searchParams, pathname, router]
+    [searchParams, pathname, router],
   );
 
-  const totalPages = data ? Math.max(1, Math.ceil(data.totalCount / PAGE_SIZE)) : 1;
+  const buildPageHref = useCallback(
+    (p: number) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("page", String(p));
+      return `${pathname}?${params.toString()}`;
+    },
+    [searchParams, pathname],
+  );
+
+  const totalPages = data
+    ? Math.max(1, Math.ceil(data.totalCount / PAGE_SIZE))
+    : 1;
   const hasChanges = Object.keys(edits).length > 0;
 
   const displayValue = (tour: Tour, field: "price" | "quantity") =>
     edits[tour.id]?.[field] ?? tour[field];
 
-  const handleFieldChange = (tourId: number, field: "price" | "quantity", value: string) => {
+  const handleFieldChange = (
+    tourId: number,
+    field: "price" | "quantity",
+    value: string,
+  ) => {
     const num = Number(value);
     setEdits((prev) => ({
       ...prev,
@@ -66,7 +81,9 @@ export default function AdminInventoryPage() {
     setIsSaving(true);
     try {
       await Promise.all(
-        Object.entries(edits).map(([id, patch]) => updateMutation.mutateAsync({ id: Number(id), patch }))
+        Object.entries(edits).map(([id, patch]) =>
+          updateMutation.mutateAsync({ id: Number(id), patch }),
+        ),
       );
       toast.success("تغییرات موجودی و قیمت با موفقیت ذخیره شد");
       setEdits({});
@@ -82,8 +99,14 @@ export default function AdminInventoryPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-extrabold text-foreground">مدیریت موجودی و قیمت‌ها</h1>
-        <Button onClick={handleSaveClick} disabled={!hasChanges || isSaving} className="w-fit">
+        <h1 className="text-xl font-extrabold text-foreground">
+          مدیریت موجودی و قیمت‌ها
+        </h1>
+        <Button
+          onClick={handleSaveClick}
+          disabled={!hasChanges || isSaving}
+          className="w-fit"
+        >
           {isSaving ? "در حال ذخیره..." : "ذخیره"}
         </Button>
       </div>
@@ -100,7 +123,10 @@ export default function AdminInventoryPage() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={3} className="px-4 py-6 text-center text-muted-foreground">
+                <td
+                  colSpan={3}
+                  className="px-4 py-6 text-center text-muted-foreground"
+                >
                   در حال بارگذاری...
                 </td>
               </tr>
@@ -108,7 +134,10 @@ export default function AdminInventoryPage() {
             {data?.tours.map((tour) => {
               const isDirty = tour.id in edits;
               return (
-                <tr key={tour.id} className="border-b border-border last:border-0">
+                <tr
+                  key={tour.id}
+                  className="border-b border-border last:border-0"
+                >
                   <td className="px-4 py-3 font-medium text-foreground">
                     {tour.name}
                     {isDirty && (
@@ -121,7 +150,9 @@ export default function AdminInventoryPage() {
                     <input
                       type="number"
                       value={displayValue(tour, "price")}
-                      onChange={(e) => handleFieldChange(tour.id, "price", e.target.value)}
+                      onChange={(e) =>
+                        handleFieldChange(tour.id, "price", e.target.value)
+                      }
                       className="w-32 rounded-lg border border-border bg-background px-2 py-1.5 text-foreground outline-none focus:border-primary"
                     />
                   </td>
@@ -129,7 +160,9 @@ export default function AdminInventoryPage() {
                     <input
                       type="number"
                       value={displayValue(tour, "quantity")}
-                      onChange={(e) => handleFieldChange(tour.id, "quantity", e.target.value)}
+                      onChange={(e) =>
+                        handleFieldChange(tour.id, "quantity", e.target.value)
+                      }
                       className="w-20 rounded-lg border border-border bg-background px-2 py-1.5 text-foreground outline-none focus:border-primary"
                     />
                   </td>
@@ -140,11 +173,16 @@ export default function AdminInventoryPage() {
         </table>
       </div>
 
-      <Pagination page={page} totalPages={totalPages} onChange={(p) => updateParams({ page: String(p) })} />
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        buildHref={buildPageHref}
+      />
 
       {hasChanges && (
         <p className="text-xs text-muted-foreground">
-          * {Object.keys(edits).length} مورد تغییر داده شده که هنوز ذخیره نشده — تا زدن دکمه‌ی «ذخیره» اعمال نمی‌شود.
+          * {Object.keys(edits).length} مورد تغییر داده شده که هنوز ذخیره نشده —
+          تا زدن دکمه‌ی «ذخیره» اعمال نمی‌شود.
         </p>
       )}
 

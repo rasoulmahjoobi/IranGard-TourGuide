@@ -17,7 +17,7 @@ export function ProductGallery({ images, name, categoryId }: ProductGalleryProps
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="relative aspect-[4/3] overflow-hidden rounded-3xl shadow-md">
+      <div className="relative aspect-4/3 overflow-hidden rounded-3xl shadow-md">
         <TourImage src={list[active]} alt={name} gradient={getCategoryGradient(categoryId)} />
       </div>
       {list.length > 1 && (

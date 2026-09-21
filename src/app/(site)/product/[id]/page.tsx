@@ -131,7 +131,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
           <button
             disabled={soldOut}
-            className="w-full rounded-full bg-gradient-to-l from-primary to-coral py-3 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/30 transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+            className="w-full rounded-full bg-linear-to-l from-primary to-coral py-3 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/30 transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
           >
             {soldOut ? "ظرفیت این تور تکمیل شده است" : "رزرو این تور"}
           </button>

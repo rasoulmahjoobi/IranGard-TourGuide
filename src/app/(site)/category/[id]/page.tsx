@@ -54,6 +54,15 @@ export default function CategoryPage() {
     [searchParams, pathname, router],
   );
 
+  const buildPageHref = useCallback(
+    (p: number) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("page", String(p));
+      return `${pathname}?${params.toString()}`;
+    },
+    [searchParams, pathname],
+  );
+
   useEffect(() => {
     if (prevSearchRef.current === debouncedSearch) return;
     prevSearchRef.current = debouncedSearch;
@@ -79,14 +88,12 @@ export default function CategoryPage() {
         categories={categories ?? []}
         subcategories={allSubcategories ?? []}
       />
-
       <div className="flex items-center gap-3">
         <span className="h-6 w-1.5 rounded-full bg-primary" />
         <h1 className="text-xl font-extrabold text-foreground sm:text-2xl">
           {category ? `تورهای ${category.name}` : "در حال بارگذاری..."}
         </h1>
       </div>
-
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap gap-2">
           <button
@@ -126,17 +133,15 @@ export default function CategoryPage() {
           />
         </div>
       </div>
-
       {isLoading ? (
         <TourGridSkeleton count={PAGE_SIZE} />
       ) : (
         <TourGrid tours={data?.tours ?? []} categories={categories} />
       )}
-
       <Pagination
         page={page}
         totalPages={totalPages}
-        onChange={(p) => updateParams({ page: String(p) })}
+        buildHref={buildPageHref}
       />
     </div>
   );

@@ -8,17 +8,34 @@ import { useCategories } from "@/src/hooks/useCategories";
 import { useSubcategories } from "@/src/hooks/useSubcategories";
 import { useTours } from "@/src/hooks/useTours";
 import { useDebounce } from "@/src/hooks/useDebounce";
-import { useCreateTour, useUpdateTour, useDeleteTour } from "@/src/hooks/useTourMutations";
+import {
+  useCreateTour,
+  useUpdateTour,
+  useDeleteTour,
+} from "@/src/hooks/useTourMutations";
 import { TourImage } from "@/src/components/tour/TourImage";
 import { getCategoryGradient } from "@/src/lib/tourVisuals";
 import { formatPrice } from "@/src/lib/format";
-import { SearchInput, Select, Button, Pagination, ConfirmDialog } from "@/src/components/ui";
-import { TourFormModal, type TourFormValues } from "@/src/components/admin/TourFormModal";
+import {
+  SearchInput,
+  Select,
+  Button,
+  Pagination,
+  ConfirmDialog,
+} from "@/src/components/ui";
+import {
+  TourFormModal,
+  type TourFormValues,
+} from "@/src/components/admin/TourFormModal";
 import type { Tour } from "@/src/types/tour";
 
 const PAGE_SIZE = 5;
 
-type SubmittedValues = TourFormValues & { thumbnail: string; departureDate: string; description: string };
+type SubmittedValues = TourFormValues & {
+  thumbnail: string;
+  departureDate: string;
+  description: string;
+};
 
 type PendingAction =
   | { type: "add"; values: SubmittedValues }
@@ -60,7 +77,16 @@ export default function AdminProductsPage() {
       });
       router.push(`${pathname}?${params.toString()}`);
     },
-    [searchParams, pathname, router]
+    [searchParams, pathname, router],
+  );
+
+  const buildPageHref = useCallback(
+    (p: number) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("page", String(p));
+      return `${pathname}?${params.toString()}`;
+    },
+    [searchParams, pathname],
   );
 
   useEffect(() => {
@@ -70,8 +96,11 @@ export default function AdminProductsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch]);
 
-  const categoryName = (id: number) => categories?.find((c) => c.id === id)?.name ?? "-";
-  const totalPages = data ? Math.max(1, Math.ceil(data.totalCount / PAGE_SIZE)) : 1;
+  const categoryName = (id: number) =>
+    categories?.find((c) => c.id === id)?.name ?? "-";
+  const totalPages = data
+    ? Math.max(1, Math.ceil(data.totalCount / PAGE_SIZE))
+    : 1;
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingTour, setEditingTour] = useState<Tour | undefined>(undefined);
@@ -100,7 +129,10 @@ export default function AdminProductsPage() {
     setPending({ type: "delete", id: tour.id, name: tour.name });
   };
 
-  const isMutating = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
+  const isMutating =
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    deleteMutation.isPending;
 
   const confirmPending = () => {
     if (!pending) return;
@@ -125,7 +157,7 @@ export default function AdminProductsPage() {
         {
           onSuccess: () => toast.success("تور جدید با موفقیت اضافه شد"),
           onError: () => toast.error("خطا در افزودن تور"),
-        }
+        },
       );
     }
 
@@ -136,7 +168,9 @@ export default function AdminProductsPage() {
           patch: {
             name: pending.values.name,
             thumbnail: pending.values.thumbnail || pending.tour.thumbnail,
-            image: pending.values.thumbnail ? [pending.values.thumbnail] : pending.tour.image,
+            image: pending.values.thumbnail
+              ? [pending.values.thumbnail]
+              : pending.tour.image,
             price: pending.values.price,
             quantity: pending.values.quantity,
             category: Number(pending.values.category),
@@ -151,7 +185,7 @@ export default function AdminProductsPage() {
         {
           onSuccess: () => toast.success("تور با موفقیت ویرایش شد"),
           onError: () => toast.error("خطا در ویرایش تور"),
-        }
+        },
       );
     }
 
@@ -177,11 +211,17 @@ export default function AdminProductsPage() {
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="sm:w-64">
-          <SearchInput value={search} onChange={setSearch} placeholder="جستجوی نام تور..." />
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="جستجوی نام تور..."
+          />
         </div>
         <Select
           value={categoryId}
-          onChange={(e) => updateParams({ category: e.target.value || null, page: null })}
+          onChange={(e) =>
+            updateParams({ category: e.target.value || null, page: null })
+          }
           className="sm:w-56"
         >
           <option value="">همه دسته‌بندی‌ها</option>
@@ -207,28 +247,47 @@ export default function AdminProductsPage() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">
+                <td
+                  colSpan={5}
+                  className="px-4 py-6 text-center text-muted-foreground"
+                >
                   در حال بارگذاری...
                 </td>
               </tr>
             )}
             {!isLoading && data?.tours.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">
+                <td
+                  colSpan={5}
+                  className="px-4 py-6 text-center text-muted-foreground"
+                >
                   موردی یافت نشد
                 </td>
               </tr>
             )}
             {data?.tours.map((tour) => (
-              <tr key={tour.id} className="border-b border-border last:border-0">
+              <tr
+                key={tour.id}
+                className="border-b border-border last:border-0"
+              >
                 <td className="px-4 py-3">
                   <div className="h-12 w-12 overflow-hidden rounded-xl">
-                    <TourImage src={tour.thumbnail} alt={tour.name} gradient={getCategoryGradient(tour.category)} />
+                    <TourImage
+                      src={tour.thumbnail}
+                      alt={tour.name}
+                      gradient={getCategoryGradient(tour.category)}
+                    />
                   </div>
                 </td>
-                <td className="px-4 py-3 font-medium text-foreground">{tour.name}</td>
-                <td className="px-4 py-3 text-muted-foreground">{categoryName(tour.category)}</td>
-                <td className="px-4 py-3 text-accent-foreground">{formatPrice(tour.price)}</td>
+                <td className="px-4 py-3 font-medium text-foreground">
+                  {tour.name}
+                </td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  {categoryName(tour.category)}
+                </td>
+                <td className="px-4 py-3 text-accent-foreground">
+                  {formatPrice(tour.price)}
+                </td>
                 <td className="px-4 py-3">
                   <div className="flex gap-3 font-medium">
                     <button
@@ -253,8 +312,12 @@ export default function AdminProductsPage() {
         </table>
       </div>
 
-      <Pagination page={page} totalPages={totalPages} onChange={(p) => updateParams({ page: String(p) })} />
-
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        buildHref={buildPageHref}
+      />
+      
       <TourFormModal
         open={formOpen}
         onClose={() => setFormOpen(false)}
@@ -266,7 +329,13 @@ export default function AdminProductsPage() {
 
       <ConfirmDialog
         open={pending !== null}
-        title={pending?.type === "delete" ? "حذف تور" : pending?.type === "edit" ? "ویرایش تور" : "افزودن تور"}
+        title={
+          pending?.type === "delete"
+            ? "حذف تور"
+            : pending?.type === "edit"
+              ? "ویرایش تور"
+              : "افزودن تور"
+        }
         description={
           pending?.type === "delete"
             ? `آیا از حذف «${pending.name}» مطمئن هستید؟ این عمل قابل بازگشت نیست.`
@@ -274,7 +343,13 @@ export default function AdminProductsPage() {
               ? "آیا از ذخیره‌ی تغییرات این تور مطمئن هستید؟"
               : "آیا از افزودن این تور جدید مطمئن هستید؟"
         }
-        confirmLabel={isMutating ? "در حال پردازش..." : pending?.type === "delete" ? "حذف شود" : "ذخیره شود"}
+        confirmLabel={
+          isMutating
+            ? "در حال پردازش..."
+            : pending?.type === "delete"
+              ? "حذف شود"
+              : "ذخیره شود"
+        }
         danger={pending?.type === "delete"}
         onConfirm={confirmPending}
         onCancel={() => setPending(null)}
