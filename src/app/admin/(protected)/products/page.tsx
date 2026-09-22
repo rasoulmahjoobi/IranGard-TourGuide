@@ -33,6 +33,7 @@ const PAGE_SIZE = 5;
 
 type SubmittedValues = TourFormValues & {
   thumbnail: string;
+  gallery: string[];
   departureDate: string;
   description: string;
 };
@@ -142,7 +143,12 @@ export default function AdminProductsPage() {
         {
           name: pending.values.name,
           brand: "ایران گرد تور",
-          image: pending.values.thumbnail ? [pending.values.thumbnail] : [],
+          image:
+            pending.values.gallery.length > 0
+              ? pending.values.gallery
+              : pending.values.thumbnail
+                ? [pending.values.thumbnail]
+                : [],
           thumbnail: pending.values.thumbnail,
           price: pending.values.price,
           quantity: pending.values.quantity,
@@ -168,9 +174,10 @@ export default function AdminProductsPage() {
           patch: {
             name: pending.values.name,
             thumbnail: pending.values.thumbnail || pending.tour.thumbnail,
-            image: pending.values.thumbnail
-              ? [pending.values.thumbnail]
-              : pending.tour.image,
+            image:
+              pending.values.gallery.length > 0
+                ? pending.values.gallery
+                : pending.tour.image,
             price: pending.values.price,
             quantity: pending.values.quantity,
             category: Number(pending.values.category),
@@ -317,7 +324,7 @@ export default function AdminProductsPage() {
         totalPages={totalPages}
         buildHref={buildPageHref}
       />
-      
+
       <TourFormModal
         open={formOpen}
         onClose={() => setFormOpen(false)}
