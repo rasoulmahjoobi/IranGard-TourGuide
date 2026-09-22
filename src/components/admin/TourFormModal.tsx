@@ -34,9 +34,9 @@ const tourFormSchema = z.object({
   duration: z.string().min(1, "مدت تور الزامی است"),
   price: z.coerce.number().positive("قیمت باید بزرگ‌تر از صفر باشد"),
   quantity: z.coerce
-    .number({ message: "موجودی الزامی است" })
-    .int("موجودی باید عدد صحیح باشد")
-    .min(1, "موجودی باید حداقل ۱ باشد"),
+    .number({ message: "ظرفیت الزامی است" })
+    .int("ظرفیت باید عدد صحیح باشد")
+    .min(1, "ظرفیت باید حداقل ۱ باشد"),
 });
 
 type TourFormInput = z.input<typeof tourFormSchema>;
@@ -278,11 +278,11 @@ export function TourFormModal({
           </div>
         </div>
 
-        {/* قیمت و موجودی */}
+        {/* قیمت و ظرفیت */}
         <div className="flex flex-col gap-4 rounded-2xl border border-border p-4">
           <div className="flex items-center gap-2 text-sm font-bold text-accent-foreground">
             <DollarSign className="h-4 w-4" />
-            قیمت و موجودی
+            قیمت و ظرفیت
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Input
@@ -292,7 +292,7 @@ export function TourFormModal({
               error={errors.price?.message}
             />
             <Input
-              label="موجودی:"
+              label="ظرفیت:"
               type="number"
               min={1}
               {...register("quantity")}
