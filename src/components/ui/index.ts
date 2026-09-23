@@ -1,4 +1,5 @@
 export * from "./Button";
+export * from "./PageLoader";
 export * from "./Input";
 export * from "./PasswordInput";
 export * from "./Select";

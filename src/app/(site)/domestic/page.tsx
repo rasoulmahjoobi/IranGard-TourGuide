@@ -6,9 +6,8 @@ import { useCategories } from "@/src/hooks/useCategories";
 import { useTours } from "@/src/hooks/useTours";
 import { useDebounce } from "@/src/hooks/useDebounce";
 import { TourGrid } from "@/src/components/tour/TourGrid";
-import { TourGridSkeleton } from "@/src/components/tour/TourGridSkeleton";
 import { SiteSidebar } from "@/src/components/tour/SiteSidebar";
-import { SearchInput, Pagination } from "@/src/components/ui";
+import { SearchInput, Pagination, PageLoader } from "@/src/components/ui";
 import { cn } from "@/src/lib/utils";
 import { useSubcategories } from "@/src/hooks/useSubcategories";
 
@@ -126,7 +125,7 @@ export default function DomesticToursPage() {
         </div>
       </div>
       {isLoading ? (
-        <TourGridSkeleton count={PAGE_SIZE} />
+        <PageLoader compact />
       ) : (
         <TourGrid tours={data?.tours ?? []} categories={categories} />
       )}

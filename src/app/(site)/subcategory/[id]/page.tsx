@@ -13,8 +13,7 @@ import { useSubcategories } from "@/src/hooks/useSubcategories";
 import { useTours } from "@/src/hooks/useTours";
 import { useDebounce } from "@/src/hooks/useDebounce";
 import { TourGrid } from "@/src/components/tour/TourGrid";
-import { TourGridSkeleton } from "@/src/components/tour/TourGridSkeleton";
-import { SearchInput, Pagination } from "@/src/components/ui";
+import { SearchInput, Pagination, PageLoader } from "@/src/components/ui";
 import { ROUTES } from "@/src/lib/constants";
 
 const PAGE_SIZE = 8;
@@ -121,7 +120,7 @@ export default function SubcategoryPage() {
       </div>
 
       {isLoading ? (
-        <TourGridSkeleton count={PAGE_SIZE} />
+        <PageLoader compact />
       ) : (
         <TourGrid tours={data?.tours ?? []} categories={categories} />
       )}

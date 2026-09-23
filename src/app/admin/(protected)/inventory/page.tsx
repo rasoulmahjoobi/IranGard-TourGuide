@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
 import { useTours } from "@/src/hooks/useTours";
 import { useUpdateTour } from "@/src/hooks/useTourMutations";
-import { Button, Pagination, ConfirmDialog } from "@/src/components/ui";
+import { Button, Pagination, ConfirmDialog, PageLoader } from "@/src/components/ui";
 import { EditableCell } from "@/src/components/admin/EditableCell";
 import { formatPrice } from "@/src/lib/format";
 import type { Tour } from "@/src/types/tour";
@@ -127,8 +127,8 @@ export default function AdminInventoryPage() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={3} className="px-4 py-6 text-center text-muted-foreground">
-                  در حال بارگذاری...
+                <td colSpan={3} className="px-4 py-6">
+                  <PageLoader compact />
                 </td>
               </tr>
             )}

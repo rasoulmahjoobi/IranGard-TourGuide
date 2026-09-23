@@ -22,6 +22,7 @@ import {
   Button,
   Pagination,
   ConfirmDialog,
+  PageLoader,
 } from "@/src/components/ui";
 import {
   TourFormModal,
@@ -254,11 +255,8 @@ export default function AdminProductsPage() {
           <tbody>
             {isLoading && (
               <tr>
-                <td
-                  colSpan={5}
-                  className="px-4 py-6 text-center text-muted-foreground"
-                >
-                  در حال بارگذاری...
+                <td colSpan={5} className="px-4 py-6">
+                  <PageLoader compact />
                 </td>
               </tr>
             )}

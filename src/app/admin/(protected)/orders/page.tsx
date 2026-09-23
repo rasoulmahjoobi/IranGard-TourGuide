@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowDownUp } from "lucide-react";
 import { useOrders } from "@/src/hooks/useOrders";
 import { formatPrice } from "@/src/lib/format";
-import { Pagination } from "@/src/components/ui";
+import { Pagination, PageLoader } from "@/src/components/ui";
 import { cn } from "@/src/lib/utils";
 
 const PAGE_SIZE = 5;
@@ -111,11 +111,8 @@ export default function AdminOrdersPage() {
           <tbody>
             {isLoading && (
               <tr>
-                <td
-                  colSpan={4}
-                  className="px-4 py-6 text-center text-muted-foreground"
-                >
-                  در حال بارگذاری...
+                <td colSpan={4} className="px-4 py-6">
+                  <PageLoader compact />
                 </td>
               </tr>
             )}
