@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MapPin, Star, Clock, CalendarDays, ChevronLeft, Users, Ticket } from "lucide-react";
 import { getTourById } from "@/src/lib/api/tours";
+import { getCategories } from "@/src/lib/api/categories";
+import { getSubcategories } from "@/src/lib/api/subcategories";
 import { toPersianDate } from "@/src/lib/dateUtils";
 import { formatPrice } from "@/src/lib/format";
 import { ProductGallery } from "@/src/components/tour/ProductGallery";
@@ -22,26 +24,31 @@ export default async function ProductPage({ params }: ProductPageProps) {
   }
   if (!tour) notFound();
 
+  // به‌جای تکیه‌ی صرف به enrichment سمت بک‌اند، خودمون هم دسته‌بندی/زیردسته رو resolve می‌کنیم
+  // تا breadcrumb همیشه کامل باشه، حتی اگه بک‌اند categoryName/subcategoryName رو برنگردونه
+  const [categories, subcategories] = await Promise.all([getCategories(), getSubcategories()]);
+  const categoryName = tour.categoryName ?? categories.find((c) => c.id === tour.category)?.name;
+  const subcategoryName = tour.subcategoryName ?? subcategories.find((s) => s.id === tour.subcategory)?.name;
+
   const soldOut = tour.quantity <= 0;
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-10">
-      {/* Breadcrumb */}
       <nav className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
         <Link href={ROUTES.home} className="hover:text-primary">خانه</Link>
         <ChevronLeft className="h-3.5 w-3.5" />
-        {tour.categoryName && (
+        {categoryName && (
           <>
             <Link href={ROUTES.category(String(tour.category))} className="hover:text-primary">
-              {tour.categoryName}
+              {categoryName}
             </Link>
             <ChevronLeft className="h-3.5 w-3.5" />
           </>
         )}
-        {tour.subcategoryName && (
+        {subcategoryName && (
           <>
             <Link href={ROUTES.subcategory(String(tour.subcategory))} className="hover:text-primary">
-              {tour.subcategoryName}
+              {subcategoryName}
             </Link>
             <ChevronLeft className="h-3.5 w-3.5" />
           </>
@@ -50,7 +57,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
       </nav>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.4fr_1fr]">
-        {/* ستون اصلی */}
         <div className="flex flex-col gap-6">
           <ProductGallery images={tour.image} name={tour.name} categoryId={tour.category} />
 
@@ -80,7 +86,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               </span>
               <span className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-semibold text-foreground">
                 <Users className="h-3.5 w-3.5 text-turquoise" />
-                {soldOut ? "ظرفیت تکمیل" : `${tour.quantity} نفر ظرفیت باقی‌مانده`}
+                {soldOut ? "پایان ظرفیت" : `${tour.quantity} نفر ظرفیت باقی‌مانده`}
               </span>
             </div>
 
@@ -96,13 +102,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
           </div>
         </div>
 
-        {/* سایدبار رزرو */}
         <aside className="h-fit rounded-3xl border border-border bg-card p-6 shadow-lg lg:sticky lg:top-24">
           <div className="mb-4 flex items-end justify-between">
             <span className="text-sm text-muted-foreground">شروع قیمت از</span>
-            <span className="text-2xl font-extrabold text-primary">
-              {formatPrice(tour.price)}
-            </span>
+            <span className="text-2xl font-extrabold text-primary">{formatPrice(tour.price)}</span>
           </div>
 
           <div className="mb-4 flex flex-col gap-2 rounded-2xl bg-muted p-4 text-sm">
@@ -133,7 +136,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             disabled={soldOut}
             className="w-full rounded-full bg-linear-to-l from-primary to-coral py-3 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/30 transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
           >
-            {soldOut ? "ظرفیت این تور تکمیل شده است" : "رزرو این تور"}
+            {soldOut ? "پایان ظرفیت" : `بزن بریم ${tour.location}`}
           </button>
         </aside>
       </div>
