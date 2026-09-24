@@ -8,6 +8,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { store } from "@/src/store/store";
 import { setAccessToken } from "@/src/store/authSlice";
 import { getAccessTokenCookie } from "@/src/lib/cookies";
+import { hydrateCart } from "@/src/store/cartSlice";
 
 /** بعد از رفرش صفحه، اگه کوکی توکن داشت، Redux رو دوباره باهاش پر می‌کنه */
 function AuthRehydrator() {
@@ -20,6 +21,13 @@ function AuthRehydrator() {
   return null;
 }
 
+function CartRehydrator() {
+  useEffect(() => {
+    store.dispatch(hydrateCart());
+  }, []);
+  return null;
+}
+
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
 
@@ -27,6 +35,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <ReduxProvider store={store}>
       <QueryClientProvider client={queryClient}>
         <AuthRehydrator />
+        <CartRehydrator />
         {children}
         <ToastContainer rtl position="top-left" />
       </QueryClientProvider>
