@@ -12,9 +12,8 @@ import { useSubcategories } from "@/src/hooks/useSubcategories";
 import { useTours } from "@/src/hooks/useTours";
 import { useDebounce } from "@/src/hooks/useDebounce";
 import { TourGrid } from "@/src/components/tour/TourGrid";
-import { TourGridSkeleton } from "@/src/components/tour/TourGridSkeleton";
 import { SiteSidebar } from "@/src/components/tour/SiteSidebar";
-import { SearchInput, Pagination } from "@/src/components/ui";
+import { SearchInput, Pagination, PageLoader } from "@/src/components/ui";
 import { cn } from "@/src/lib/utils";
 
 const PAGE_SIZE = 8;
@@ -54,6 +53,15 @@ export default function CategoryPage() {
     [searchParams, pathname, router],
   );
 
+  const buildPageHref = useCallback(
+    (p: number) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("page", String(p));
+      return `${pathname}?${params.toString()}`;
+    },
+    [searchParams, pathname],
+  );
+
   useEffect(() => {
     if (prevSearchRef.current === debouncedSearch) return;
     prevSearchRef.current = debouncedSearch;
@@ -67,6 +75,8 @@ export default function CategoryPage() {
     q: debouncedSearch || undefined,
     _page: page,
     _limit: PAGE_SIZE,
+    _sort: "createdAt",
+    _order: "desc",
   });
 
   const totalPages = data
@@ -79,14 +89,12 @@ export default function CategoryPage() {
         categories={categories ?? []}
         subcategories={allSubcategories ?? []}
       />
-
       <div className="flex items-center gap-3">
         <span className="h-6 w-1.5 rounded-full bg-primary" />
         <h1 className="text-xl font-extrabold text-foreground sm:text-2xl">
           {category ? `تورهای ${category.name}` : "در حال بارگذاری..."}
         </h1>
       </div>
-
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap gap-2">
           <button
@@ -126,17 +134,15 @@ export default function CategoryPage() {
           />
         </div>
       </div>
-
       {isLoading ? (
-        <TourGridSkeleton count={PAGE_SIZE} />
+        <PageLoader compact />
       ) : (
         <TourGrid tours={data?.tours ?? []} categories={categories} />
       )}
-
       <Pagination
         page={page}
         totalPages={totalPages}
-        onChange={(p) => updateParams({ page: String(p) })}
+        buildHref={buildPageHref}
       />
     </div>
   );

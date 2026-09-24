@@ -11,8 +11,8 @@ import { logout } from "@/src/store/authSlice";
 import { clearAuthCookies } from "@/src/lib/cookies";
 
 const tabs = [
-  { href: ROUTES.adminProducts, label: "کالاها", icon: Package },
-  { href: ROUTES.adminInventory, label: "موجودی و قیمت‌ها", icon: DollarSign },
+  { href: ROUTES.adminProducts, label: "تورها", icon: Package },
+  { href: ROUTES.adminInventory, label: "ظرفیت و قیمت‌ها", icon: DollarSign },
   { href: ROUTES.adminOrders, label: "سفارش‌ها", icon: ClipboardList },
 ];
 
@@ -44,7 +44,7 @@ export function AdminHeader() {
                 className={cn(
                   "flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition-all",
                   active
-                    ? "bg-gradient-to-l from-primary to-coral text-primary-foreground shadow-md shadow-primary/20"
+                    ? "bg-linear-to-l from-primary to-coral text-primary-foreground shadow-md shadow-primary/20"
                     : "text-muted-foreground hover:bg-card hover:text-foreground"
                 )}
               >

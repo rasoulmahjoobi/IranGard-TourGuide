@@ -8,8 +8,7 @@ import { useTours } from "@/src/hooks/useTours";
 import { useDebounce } from "@/src/hooks/useDebounce";
 import { toPersianDate } from "@/src/lib/dateUtils";
 import { TourGrid } from "@/src/components/tour/TourGrid";
-import { TourGridSkeleton } from "@/src/components/tour/TourGridSkeleton";
-import { SearchInput, Pagination } from "@/src/components/ui";
+import { SearchInput, Pagination, PageLoader } from "@/src/components/ui";
 
 const PAGE_SIZE = 8;
 
@@ -39,6 +38,15 @@ export default function SearchPage() {
     [searchParams, pathname, router],
   );
 
+  const buildPageHref = useCallback(
+    (p: number) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("page", String(p));
+      return `${pathname}?${params.toString()}`;
+    },
+    [searchParams, pathname],
+  );
+
   useEffect(() => {
     if (prevSearchRef.current === debouncedSearch) return;
     prevSearchRef.current = debouncedSearch;
@@ -51,6 +59,8 @@ export default function SearchPage() {
     departureFrom: selectedDate || undefined,
     _page: page,
     _limit: PAGE_SIZE,
+    _sort: "createdAt",
+    _order: "desc",
   });
 
   const totalPages = data
@@ -74,7 +84,6 @@ export default function SearchPage() {
           />
         </div>
       </div>
-
       {selectedDate && (
         <div className="flex items-center gap-2">
           <span className="flex items-center gap-2 rounded-full bg-turquoise/10 px-4 py-1.5 text-sm font-semibold text-turquoise">
@@ -89,17 +98,15 @@ export default function SearchPage() {
           </span>
         </div>
       )}
-
       {isLoading ? (
-        <TourGridSkeleton count={PAGE_SIZE} />
+        <PageLoader compact />
       ) : (
         <TourGrid tours={data?.tours ?? []} categories={categories} />
       )}
-
       <Pagination
         page={page}
         totalPages={totalPages}
-        onChange={(p) => updateParams({ page: String(p) })}
+        buildHref={buildPageHref}
       />
     </div>
   );
