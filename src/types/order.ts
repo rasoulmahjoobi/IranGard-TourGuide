@@ -12,9 +12,12 @@ export interface Order {
   lastname: string;
   address: string;
   phone: string;
+  startDate: string;
+  endDate: string;
   expectAt?: number;
   products: OrderProduct[];
   prices: number;
   delivered: string; // "true" یا "false"
+  paid: boolean;
   createdAt: number;
 }

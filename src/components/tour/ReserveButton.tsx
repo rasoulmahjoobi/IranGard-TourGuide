@@ -3,11 +3,12 @@
 import { useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
-import { Users, Plane, Bus, X } from "lucide-react";
+import { Users, Plane, Bus } from "lucide-react";
 import { Modal, Button } from "@/src/components/ui";
 import { addToCart, type CartItem } from "@/src/store/cartSlice";
 import type { RootState } from "@/src/store/store";
 import type { Tour } from "@/src/types/tour";
+import { getOrders } from "@/src/lib/api/orders";
 import { formatPrice } from "@/src/lib/format";
 import { computeTourEndDate, rangesOverlap } from "@/src/lib/tourDates";
 import {
@@ -21,9 +22,11 @@ import { cn } from "@/src/lib/utils";
 export function ReserveButton({ tour }: { tour: Tour }) {
   const dispatch = useDispatch();
   const cartItems = useSelector((s: RootState) => s.cart.items);
+  const customerPhone = useSelector((s: RootState) => s.cart.customerPhone);
 
   const [open, setOpen] = useState(false);
   const [peopleCount, setPeopleCount] = useState(1);
+  const [isChecking, setIsChecking] = useState(false);
 
   const isInternational = tour.category === INTERNATIONAL_CATEGORY_ID;
   const landAvailable = isInternational && hasLandOption(tour.location);
@@ -37,9 +40,9 @@ export function ReserveButton({ tour }: { tour: Tour }) {
   }, [isInternational, tour.price, travelType]);
 
   const totalPrice = unitPrice * peopleCount;
-  const endDate = useMemo(() => computeTourEndDate(tour.departureDate, tour.duration), [tour]);
+  const endDate = computeTourEndDate(tour.departureDate, tour.duration);
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (peopleCount < 1) {
       toast.error("تعداد نفرات باید حداقل ۱ باشد");
       return;
@@ -49,32 +52,50 @@ export function ReserveButton({ tour }: { tour: Tour }) {
       return;
     }
 
-    const conflict = cartItems.find((item) =>
-      rangesOverlap(tour.departureDate, endDate, item.departureDate, item.endDate)
-    );
-    if (conflict) {
-      toast.error(`این بازه با تور «${conflict.name}» که قبلاً به سبد اضافه کرده‌اید تداخل زمانی دارد`);
-      return;
+    setIsChecking(true);
+    try {
+      // ۱) تداخل با تورهایی که همین الان تو سبد (سفارش‌های در انتظار پرداخت) هستن
+      const cartConflict = cartItems.find((item) =>
+        rangesOverlap(tour.departureDate, endDate, item.departureDate, item.endDate)
+      );
+      if (cartConflict) {
+        toast.error(`این بازه با تور «${cartConflict.name}» که در سبد رزرو شماست تداخل زمانی دارد`);
+        return;
+      }
+
+      // ۲) تداخل با سفارش‌های قبلاً تأیید و پرداخت‌شده‌ی همین کاربر (اگه شماره تلفنش رو از قبل داریم)
+      if (customerPhone) {
+        const { orders: paidOrders } = await getOrders({ phone: customerPhone, paid: "true" });
+        const paidConflict = paidOrders.find((order) =>
+          rangesOverlap(tour.departureDate, endDate, order.startDate, order.endDate)
+        );
+        if (paidConflict) {
+          toast.error("این بازه با یکی از سفارش‌های تأییدشده‌ی قبلی شما تداخل زمانی دارد");
+          return;
+        }
+      }
+
+      const cartItem: CartItem = {
+        id: `${tour.id}-${Date.now()}`,
+        tourId: tour.id,
+        name: tour.name,
+        thumbnail: tour.thumbnail,
+        location: tour.location,
+        duration: tour.duration,
+        departureDate: tour.departureDate,
+        endDate,
+        peopleCount,
+        unitPrice,
+        ...(isInternational && { travelType, travelTypeLabel: TRAVEL_TYPE_LABEL[travelType] }),
+      };
+
+      dispatch(addToCart(cartItem));
+      toast.success("تور به سبد رزرو اضافه شد");
+      setOpen(false);
+      setPeopleCount(1);
+    } finally {
+      setIsChecking(false);
     }
-
-    const cartItem: CartItem = {
-      id: `${tour.id}-${Date.now()}`,
-      tourId: tour.id,
-      name: tour.name,
-      thumbnail: tour.thumbnail,
-      location: tour.location,
-      duration: tour.duration,
-      departureDate: tour.departureDate,
-      endDate,
-      peopleCount,
-      unitPrice,
-      ...(isInternational && { travelType, travelTypeLabel: TRAVEL_TYPE_LABEL[travelType] }),
-    };
-
-    dispatch(addToCart(cartItem));
-    toast.success("تور به سبد رزرو اضافه شد");
-    setOpen(false);
-    setPeopleCount(1);
   };
 
   return (
@@ -175,7 +196,9 @@ export function ReserveButton({ tour }: { tour: Tour }) {
             <span className="text-lg font-extrabold text-primary">{formatPrice(totalPrice)}</span>
           </div>
 
-          <Button onClick={handleConfirm}>افزودن به سبد رزرو</Button>
+          <Button onClick={handleConfirm} disabled={isChecking}>
+            {isChecking ? "در حال بررسی تداخل زمانی..." : "افزودن به سبد رزرو"}
+          </Button>
         </div>
       </Modal>
     </>
