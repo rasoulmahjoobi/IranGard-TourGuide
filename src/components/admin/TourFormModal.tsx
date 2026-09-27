@@ -1,5 +1,5 @@
 "use client";
-
+import { TourImage } from "@/src/components/tour/TourImage";
 import { useEffect, useState, type ChangeEvent } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,11 +19,22 @@ import {
   X,
   Images,
 } from "lucide-react";
-import { Modal, Input, Select, Button, PersianDatePicker } from "@/src/components/ui";
+import {
+  Modal,
+  Input,
+  Select,
+  Button,
+  PersianDatePicker,
+} from "@/src/components/ui";
 import { RichTextEditor } from "./RichTextEditor";
 import type { Category, Subcategory, Tour } from "@/src/types/tour";
 
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const ACCEPTED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+];
 const MAX_GALLERY_IMAGES = 5;
 
 function validateImageFile(file: File): string | null {
@@ -67,7 +78,7 @@ interface TourFormModalProps {
       gallery: string[];
       departureDate: string;
       description: string;
-    }
+    },
   ) => void;
   categories: Category[];
   subcategories: Subcategory[];
@@ -76,7 +87,15 @@ interface TourFormModalProps {
 
 function toFormDefaults(tour?: Tour): TourFormValues {
   if (!tour) {
-    return { name: "", category: "", subcategory: "", location: "", duration: "", price: 0, quantity: 1 };
+    return {
+      name: "",
+      category: "",
+      subcategory: "",
+      location: "",
+      duration: "",
+      price: 0,
+      quantity: 1,
+    };
   }
   return {
     name: tour.name,
@@ -128,7 +147,9 @@ export function TourFormModal({
   }, [open, initialTour, reset]);
 
   const selectedCategory = watch("category");
-  const filteredSubcategories = subcategories.filter((s) => String(s.category) === selectedCategory);
+  const filteredSubcategories = subcategories.filter(
+    (s) => String(s.category) === selectedCategory,
+  );
 
   const handleThumbnailChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -156,7 +177,9 @@ export function TourFormModal({
 
     const toProcess = files.slice(0, remaining);
     if (files.length > remaining) {
-      toast.error(`فقط ${remaining} عکس دیگر اضافه شد (سقف گالری ${MAX_GALLERY_IMAGES} عکس است)`);
+      toast.error(
+        `فقط ${remaining} عکس دیگر اضافه شد (سقف گالری ${MAX_GALLERY_IMAGES} عکس است)`,
+      );
     }
 
     const validFiles: File[] = [];
@@ -206,22 +229,39 @@ export function TourFormModal({
   };
 
   return (
-    <Modal open={open} onClose={onClose} title={initialTour ? "ویرایش تور" : "افزودن تور جدید"}>
-      <form onSubmit={handleSubmit(submit)} className="flex max-h-[75vh] flex-col gap-6 overflow-y-auto pl-1">
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={initialTour ? "ویرایش تور" : "افزودن تور جدید"}
+    >
+      <form
+        onSubmit={handleSubmit(submit)}
+        className="flex max-h-[75vh] flex-col gap-6 overflow-y-auto pl-1"
+      >
         {/* تصویر شاخص (thumbnail) */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-foreground">تصویر شاخص (Thumbnail):</label>
+          <label className="text-sm font-medium text-foreground">
+            تصویر شاخص (Thumbnail):
+          </label>
           <label className="group relative flex cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border-2 border-dashed border-border bg-linear-to-br from-muted to-card px-4 py-6 text-center transition hover:border-primary">
             {thumbnail ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={thumbnail} alt="پیش‌نمایش" className="absolute inset-0 h-full w-full object-cover" />
+              <TourImage
+                src={thumbnail}
+                alt="پیش‌نمایش"
+                gradient="from-muted to-card"
+                className="absolute inset-0"
+              />
             ) : (
               <>
                 <span className="flex h-12 w-12 items-center justify-center rounded-full bg-linear-to-l from-primary to-coral text-white shadow-md">
                   <ImagePlus className="h-5 w-5" />
                 </span>
-                <span className="text-sm font-semibold text-foreground">برای آپلود تصویر شاخص کلیک کنید</span>
-                <span className="text-xs text-muted-foreground">JPG، PNG، WebP یا GIF</span>
+                <span className="text-sm font-semibold text-foreground">
+                  برای آپلود تصویر شاخص کلیک کنید
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  JPG، PNG، WebP یا GIF
+                </span>
               </>
             )}
             {thumbnail && (
@@ -246,10 +286,11 @@ export function TourFormModal({
           </label>
           <div className="grid grid-cols-5 gap-2">
             {gallery.map((img, i) => (
-              <div key={i} className="relative aspect-square overflow-hidden rounded-xl border border-border">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={img} alt={`گالری ${i + 1}`} className="h-full w-full object-cover" />
-                <button
+              <div
+                key={i}
+                className="relative aspect-square overflow-hidden rounded-xl border border-border"
+              >
+<TourImage src={img} alt={`گالری ${i + 1}`} gradient="from-muted to-card" />                <button
                   type="button"
                   onClick={() => removeGalleryImage(i)}
                   aria-label="حذف عکس"
@@ -284,9 +325,17 @@ export function TourFormModal({
             <Tag className="h-4 w-4" />
             اطلاعات پایه
           </div>
-          <Input label="نام تور:" {...register("name")} error={errors.name?.message} />
+          <Input
+            label="نام تور:"
+            {...register("name")}
+            error={errors.name?.message}
+          />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Select label="دسته‌بندی:" {...register("category")} error={errors.category?.message}>
+            <Select
+              label="دسته‌بندی:"
+              {...register("category")}
+              error={errors.category?.message}
+            >
               <option value="">انتخاب کنید</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -294,7 +343,11 @@ export function TourFormModal({
                 </option>
               ))}
             </Select>
-            <Select label="زیردسته:" {...register("subcategory")} error={errors.subcategory?.message}>
+            <Select
+              label="زیردسته:"
+              {...register("subcategory")}
+              error={errors.subcategory?.message}
+            >
               <option value="">انتخاب کنید</option>
               {filteredSubcategories.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -312,7 +365,11 @@ export function TourFormModal({
             مقصد و زمان‌بندی
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Input label="مقصد:" {...register("location")} error={errors.location?.message} />
+            <Input
+              label="مقصد:"
+              {...register("location")}
+              error={errors.location?.message}
+            />
             <Input
               label="مدت تور:"
               placeholder="مثلا: ۲ روز و ۱ شب"
@@ -329,11 +386,15 @@ export function TourFormModal({
               value={date}
               onChange={setDate}
               placeholder={
-                initialTour?.departureDate ? "تاریخ فعلی حفظ می‌شود، برای تغییر کلیک کنید" : "انتخاب تاریخ حرکت"
+                initialTour?.departureDate
+                  ? "تاریخ فعلی حفظ می‌شود، برای تغییر کلیک کنید"
+                  : "انتخاب تاریخ حرکت"
               }
               className="rounded-xl border border-border bg-card px-3.5 py-2.5"
             />
-            {dateError && <span className="text-xs text-red-600">{dateError}</span>}
+            {dateError && (
+              <span className="text-xs text-red-600">{dateError}</span>
+            )}
           </div>
         </div>
 
@@ -344,12 +405,24 @@ export function TourFormModal({
             قیمت و ظرفیت
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Input label="قیمت (تومان):" type="number" {...register("price")} error={errors.price?.message} />
-            <Input label="ظرفیت:" type="number" min={1} {...register("quantity")} error={errors.quantity?.message} />
+            <Input
+              label="قیمت (تومان):"
+              type="number"
+              {...register("price")}
+              error={errors.price?.message}
+            />
+            <Input
+              label="ظرفیت:"
+              type="number"
+              min={1}
+              {...register("quantity")}
+              error={errors.quantity?.message}
+            />
           </div>
           <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Boxes className="h-3 w-3" />
-            امتیاز تور توسط نظرات مشتریان تعیین می‌شود و از این بخش قابل ویرایش نیست.
+            امتیاز تور توسط نظرات مشتریان تعیین می‌شود و از این بخش قابل ویرایش
+            نیست.
           </p>
         </div>
 
@@ -359,7 +432,12 @@ export function TourFormModal({
             <FileText className="h-4 w-4" />
             توضیحات تور
           </div>
-          <RichTextEditor label="" value={description} onChange={setDescription} error={descError} />
+          <RichTextEditor
+            label=""
+            value={description}
+            onChange={setDescription}
+            error={descError}
+          />
         </div>
 
         <div className="sticky bottom-0 flex justify-end gap-3 border-t border-border bg-card pt-4">

@@ -6,15 +6,14 @@ import {
   Menu,
   X,
   ChevronDown,
+  ChevronLeft,
   Mountain,
   Landmark,
   Waves,
   Plane,
   Compass,
-  MapPin,
   type LucideIcon,
 } from "lucide-react";
-import { useTours } from "@/src/hooks/useTours";
 import { ROUTES } from "@/src/lib/constants";
 import { cn } from "@/src/lib/utils";
 import type { Category, Subcategory } from "@/src/types/tour";
@@ -36,11 +35,6 @@ export function SiteSidebar({ categories, subcategories }: SiteSidebarProps) {
   const [open, setOpen] = useState(false);
   const [rootOpen, setRootOpen] = useState(false);
   const [openCats, setOpenCats] = useState<Set<number>>(new Set());
-  const [openSubs, setOpenSubs] = useState<Set<number>>(new Set());
-
-  // تعداد تور هر زیردسته همچنان زنده (کلاینت) گرفته می‌شه چون واقعاً پویاست
-  const { data: toursData } = useTours({ _limit: 100 });
-  const tours = toursData?.tours ?? [];
 
   useEffect(() => {
     if (!open) return;
@@ -58,12 +52,7 @@ export function SiteSidebar({ categories, subcategories }: SiteSidebarProps) {
       return next;
     });
 
-  const toggleSub = (id: number) =>
-    setOpenSubs((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
+  const close = () => setOpen(false);
 
   return (
     <>
@@ -76,7 +65,7 @@ export function SiteSidebar({ categories, subcategories }: SiteSidebarProps) {
       </button>
 
       <div
-        onClick={() => setOpen(false)}
+        onClick={close}
         className={cn(
           "fixed inset-0 z-40 bg-black/40 transition-opacity duration-300",
           open ? "opacity-100" : "pointer-events-none opacity-0"
@@ -91,11 +80,7 @@ export function SiteSidebar({ categories, subcategories }: SiteSidebarProps) {
       >
         <div className="flex items-center justify-between border-b border-border px-4 py-4">
           <h3 className="text-base font-bold text-foreground">دسته‌بندی تورها</h3>
-          <button
-            onClick={() => setOpen(false)}
-            aria-label="بستن"
-            className="rounded-full p-1.5 text-muted-foreground hover:bg-muted"
-          >
+          <button onClick={close} aria-label="بستن" className="rounded-full p-1.5 text-muted-foreground hover:bg-muted">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -121,67 +106,41 @@ export function SiteSidebar({ categories, subcategories }: SiteSidebarProps) {
 
                 return (
                   <div key={cat.id} className="flex flex-col">
-                    <button
-                      onClick={() => toggleCat(cat.id)}
-                      className="flex w-full items-center gap-2.5 rounded-xl px-2 py-2.5 text-sm font-semibold text-foreground transition hover:bg-muted"
-                    >
-                      <span className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-lg", bg)}>
-                        <Icon className={cn("h-3.5 w-3.5", color)} />
-                      </span>
-                      <span className="flex-1 text-right">{cat.name}</span>
-                      <ChevronDown
-                        className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", catOpen && "rotate-180")}
-                      />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <Link
+                        href={ROUTES.category(String(cat.id))}
+                        onClick={close}
+                        className="flex flex-1 items-center gap-2.5 rounded-xl px-2 py-2.5 text-sm font-semibold text-foreground transition hover:bg-muted"
+                      >
+                        <span className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-lg", bg)}>
+                          <Icon className={cn("h-3.5 w-3.5", color)} />
+                        </span>
+                        <span className="flex-1 text-right">{cat.name}</span>
+                      </Link>
+                      {subs.length > 0 && (
+                        <button
+                          onClick={() => toggleCat(cat.id)}
+                          aria-label="نمایش زیردسته‌ها"
+                          className="shrink-0 rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted"
+                        >
+                          <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", catOpen && "rotate-180")} />
+                        </button>
+                      )}
+                    </div>
 
                     {catOpen && (
                       <div className="animate-fade-in mr-3 flex flex-col gap-0.5 border-r-2 border-border pr-3 pt-1">
-                        {subs.length === 0 && (
-                          <span className="px-2 py-1.5 text-xs text-muted-foreground">زیردسته‌ای ثبت نشده</span>
-                        )}
-                        {subs.map((sub) => {
-                          const subOpen = openSubs.has(sub.id);
-                          const subTours = tours.filter((t) => t.subcategory === sub.id);
-
-                          return (
-                            <div key={sub.id} className="flex flex-col">
-                              <button
-                                onClick={() => toggleSub(sub.id)}
-                                className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-[13px] font-medium text-foreground transition hover:bg-muted"
-                              >
-                                <span className="flex-1 text-right">{sub.name}</span>
-                                <span className="text-[11px] text-muted-foreground">{subTours.length}</span>
-                                <ChevronDown
-                                  className={cn(
-                                    "h-3 w-3 text-muted-foreground transition-transform",
-                                    subOpen && "rotate-180"
-                                  )}
-                                />
-                              </button>
-
-                              {subOpen && (
-                                <div className="animate-fade-in mr-3 flex flex-col gap-0.5 border-r-2 border-border pr-3 pt-1">
-                                  {subTours.length === 0 && (
-                                    <span className="px-2 py-1.5 text-xs text-muted-foreground">
-                                      توری ثبت نشده
-                                    </span>
-                                  )}
-                                  {subTours.map((tour) => (
-                                    <Link
-                                      key={tour.id}
-                                      href={ROUTES.product(String(tour.id))}
-                                      onClick={() => setOpen(false)}
-                                      className="flex items-center gap-2 rounded-lg px-2 py-2 text-xs text-muted-foreground transition hover:bg-muted hover:text-primary"
-                                    >
-                                      <MapPin className="h-3 w-3 shrink-0" />
-                                      <span className="line-clamp-1">{tour.name}</span>
-                                    </Link>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
+                        {subs.map((sub) => (
+                          <Link
+                            key={sub.id}
+                            href={ROUTES.subcategory(String(sub.id))}
+                            onClick={close}
+                            className="flex items-center justify-between gap-2 rounded-lg px-2 py-2 text-[13px] font-medium text-foreground transition hover:bg-muted hover:text-primary"
+                          >
+                            <span>{sub.name}</span>
+                            <ChevronLeft className="h-3 w-3 text-muted-foreground" />
+                          </Link>
+                        ))}
                       </div>
                     )}
                   </div>
