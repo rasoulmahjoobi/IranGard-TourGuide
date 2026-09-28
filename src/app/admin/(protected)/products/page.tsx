@@ -29,6 +29,7 @@ import {
   type TourFormValues,
 } from "@/src/components/admin/TourFormModal";
 import type { Tour } from "@/src/types/tour";
+import { useAutoCorrectPage } from "@/src/hooks/useAutoCorrectPage";
 
 const PAGE_SIZE = 5;
 
@@ -103,6 +104,7 @@ export default function AdminProductsPage() {
   const totalPages = data
     ? Math.max(1, Math.ceil(data.totalCount / PAGE_SIZE))
     : 1;
+    useAutoCorrectPage(page, totalPages, isLoading, (p) => updateParams({ page: String(p) }));
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingTour, setEditingTour] = useState<Tour | undefined>(undefined);

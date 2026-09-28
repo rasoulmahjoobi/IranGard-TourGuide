@@ -9,6 +9,7 @@ import { useDebounce } from "@/src/hooks/useDebounce";
 import { toPersianDate } from "@/src/lib/dateUtils";
 import { TourGrid } from "@/src/components/tour/TourGrid";
 import { SearchInput, Pagination, PageLoader } from "@/src/components/ui";
+import { useAutoCorrectPage } from "@/src/hooks/useAutoCorrectPage";
 
 const PAGE_SIZE = 8;
 
@@ -66,6 +67,7 @@ export default function SearchPage() {
   const totalPages = data
     ? Math.max(1, Math.ceil(data.totalCount / PAGE_SIZE))
     : 1;
+    useAutoCorrectPage(page, totalPages, isLoading, (p) => updateParams({ page: String(p) }));
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10">
