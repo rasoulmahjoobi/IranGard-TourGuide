@@ -12,11 +12,17 @@ interface TourImageProps {
 
 export function TourImage({ src, alt, gradient, className }: TourImageProps) {
   const [failed, setFailed] = useState(false);
-  const url = src ? `${process.env.NEXT_PUBLIC_API_URL}/files/${src}` : null;
 
-  // یا عکس نداریم، یا لود شدنش شکست خورد → گرادیان رنگی جایگزین
+  // اگه src خودش یه URL کامل یا base64 بود، مستقیم استفاده می‌شه؛
+  // فقط وقتی صرفاً یه hash خام (مثلاً آپلود قدیمی از Postman) باشه، آدرس بک‌اند جلوش اضافه می‌شه
+  const url = !src
+    ? null
+    : src.startsWith("http") || src.startsWith("data:")
+      ? src
+      : `${process.env.NEXT_PUBLIC_API_URL}/files/${src}`;
+
   if (!url || failed) {
-    return <div className={cn("h-full w-full bg-gradient-to-br", gradient, className)} />;
+    return <div className={cn("h-full w-full bg-linear-to-br", gradient, className)} />;
   }
 
   return (

@@ -1,55 +1,38 @@
 "use client";
 
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, type KeyboardEvent } from "react";
 
 interface EditableCellProps {
   value: number;
-  onCommit: (newValue: number) => void;
+  isActive: boolean;
+  onActivate: () => void;
+  onChange: (value: number) => void;
   onCancel: () => void;
   formatDisplay?: (value: number) => string;
 }
 
-/** نمایش عدد به‌صورت متن ساده؛ با کلیک تبدیل به textbox می‌شه، Enter/blur ثبت می‌کنه، Esc لغو می‌کنه */
-export function EditableCell({ value, onCommit, onCancel, formatDisplay }: EditableCellProps) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(String(value));
+/** با کلیک، تبدیل به textbox می‌شه و همون‌جا می‌مونه (حتی بعد از تایپ) — فقط Esc یا ذخیره‌ی کل صفحه از حالت ویرایش خارجش می‌کنه */
+export function EditableCell({ value, isActive, onActivate, onChange, onCancel, formatDisplay }: EditableCellProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (editing) {
-      setDraft(String(value));
+    if (isActive) {
       inputRef.current?.focus();
       inputRef.current?.select();
     }
-  }, [editing, value]);
-
-  const commit = () => {
-    const num = Number(draft);
-    setEditing(false);
-    if (!Number.isNaN(num) && num !== value) {
-      onCommit(num);
-    }
-  };
-
-  const cancel = () => {
-    setEditing(false);
-    setDraft(String(value));
-    onCancel();
-  };
+  }, [isActive]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") commit();
-    if (e.key === "Escape") cancel();
+    if (e.key === "Escape") onCancel();
   };
 
-  if (editing) {
+  if (isActive) {
     return (
       <input
         ref={inputRef}
         type="number"
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={commit}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
         onKeyDown={handleKeyDown}
         className="w-28 rounded-lg border border-primary bg-background px-2 py-1.5 text-foreground outline-none ring-2 ring-primary/20"
       />
@@ -57,11 +40,7 @@ export function EditableCell({ value, onCommit, onCancel, formatDisplay }: Edita
   }
 
   return (
-    <button
-      type="button"
-      onClick={() => setEditing(true)}
-      className="rounded-lg px-2 py-1.5 text-foreground transition hover:bg-muted"
-    >
+    <button type="button" onClick={onActivate} className="rounded-lg px-2 py-1.5 text-foreground transition hover:bg-muted">
       {formatDisplay ? formatDisplay(value) : value}
     </button>
   );

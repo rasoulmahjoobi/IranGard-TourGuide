@@ -5,7 +5,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
 import { useTours } from "@/src/hooks/useTours";
 import { useUpdateTour } from "@/src/hooks/useTourMutations";
-import { Button, Pagination, ConfirmDialog, PageLoader } from "@/src/components/ui";
+import { useAutoCorrectPage } from "@/src/hooks/useAutoCorrectPage";
+import { Button, Pagination, ConfirmDialog } from "@/src/components/ui";
 import { EditableCell } from "@/src/components/admin/EditableCell";
 import { formatPrice } from "@/src/lib/format";
 import type { Tour } from "@/src/types/tour";
@@ -26,8 +27,9 @@ export default function AdminInventoryPage() {
   const { data, isLoading } = useTours({ _page: page, _limit: PAGE_SIZE });
   const updateMutation = useUpdateTour();
 
-  // فقط کد تورهایی که واقعاً تغییر دادیم اینجا نگه‌داری می‌شه — دقیقاً همون «آرایه‌ی کدهای تغییریافته»
   const [edits, setEdits] = useState<Record<number, RowEdit>>({});
+  // کدهای «فعال»ی که الان به‌صورت textbox نمایش داده می‌شن — کلید: `${tourId}-${field}`
+  const [activeCells, setActiveCells] = useState<Set<string>>(new Set());
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -53,27 +55,34 @@ export default function AdminInventoryPage() {
   );
 
   const totalPages = data ? Math.max(1, Math.ceil(data.totalCount / PAGE_SIZE)) : 1;
+  useAutoCorrectPage(page, totalPages, isLoading, (p) => updateParams({ page: String(p) }));
+
   const hasChanges = Object.keys(edits).length > 0;
+  const cellKey = (id: number, field: "price" | "quantity") => `${id}-${field}`;
 
-  const displayValue = (tour: Tour, field: "price" | "quantity") =>
-    edits[tour.id]?.[field] ?? tour[field];
+  const displayValue = (tour: Tour, field: "price" | "quantity") => edits[tour.id]?.[field] ?? tour[field];
 
-  // با commit یه فیلد، کد تور به آرایه‌ی تغییرات اضافه می‌شه
-  const handleCommit = (tourId: number, field: "price" | "quantity", value: number) => {
-    setEdits((prev) => ({ ...prev, [tourId]: { ...prev[tourId], [field]: value } }));
+  const handleActivate = (id: number, field: "price" | "quantity") => {
+    setActiveCells((prev) => new Set(prev).add(cellKey(id, field)));
   };
 
-  // با Esc، فقط همون یه فیلد لغو می‌شه — اگه فیلد دیگه‌ای از همون ردیف هنوز تغییر داشت، ردیف کامل از آرایه حذف نمی‌شه
-  const handleCancelField = (tourId: number, field: "price" | "quantity") => {
+  const handleChange = (id: number, field: "price" | "quantity", value: number) => {
+    setEdits((prev) => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
+  };
+
+  // Esc → هم از حالت فعال، هم از آرایه‌ی تغییرات خارج می‌شه (انصراف کامل از همون فیلد)
+  const handleCancelField = (id: number, field: "price" | "quantity") => {
+    setActiveCells((prev) => {
+      const next = new Set(prev);
+      next.delete(cellKey(id, field));
+      return next;
+    });
     setEdits((prev) => {
       const rest = { ...prev };
-      const row = { ...rest[tourId] };
+      const row = { ...rest[id] };
       delete row[field];
-      if (Object.keys(row).length === 0) {
-        delete rest[tourId];
-      } else {
-        rest[tourId] = row;
-      }
+      if (Object.keys(row).length === 0) delete rest[id];
+      else rest[id] = row;
       return rest;
     });
   };
@@ -87,12 +96,13 @@ export default function AdminInventoryPage() {
     setConfirmOpen(false);
     setIsSaving(true);
     try {
-      // طبق مشخصات پروژه، ذخیره‌ی ردیف‌های تغییریافته به‌صورت سری (یکی‌یکی) انجام می‌شه، نه هم‌زمان
-      for (const [id, patch] of Object.entries(edits)) {
-        await updateMutation.mutateAsync({ id: Number(id), patch });
-      }
-      toast.success("تغییرات ظرفیت و قیمت با موفقیت ذخیره شد");
+      // طبق درخواستت، همه‌ی ردیف‌های تغییریافته با هم (Promise.all) ذخیره می‌شن
+      await Promise.all(
+        Object.entries(edits).map(([id, patch]) => updateMutation.mutateAsync({ id: Number(id), patch }))
+      );
+      toast.success("تغییرات موجودی و قیمت با موفقیت ذخیره شد");
       setEdits({});
+      setActiveCells(new Set()); // فقط الان، بعد از موفقیت، همه‌ی سلول‌ها از حالت اینپوت خارج می‌شن
     } catch {
       toast.error("خطا در ذخیره‌ی تغییرات، دوباره تلاش کنید");
     } finally {
@@ -105,14 +115,14 @@ export default function AdminInventoryPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-extrabold text-foreground">مدیریت ظرفیت و قیمت‌ها</h1>
+        <h1 className="text-xl font-extrabold text-foreground">مدیریت موجودی و قیمت‌ها</h1>
         <Button onClick={handleSaveClick} disabled={!hasChanges || isSaving} className="w-fit">
           {isSaving ? "در حال ذخیره..." : "ذخیره"}
         </Button>
       </div>
 
       <p className="text-xs text-muted-foreground">
-        روی عدد قیمت یا ظرفیت کلیک کن تا قابل ویرایش بشه. Enter برای ثبت، Esc برای انصراف از همون فیلد.
+        روی عدد قیمت یا ظرفیت کلیک کن تا قابل ویرایش بشه. تا وقتی «ذخیره» رو نزنی، همون‌طور اینپوت می‌مونه. Esc = انصراف از همون فیلد.
       </p>
 
       <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
@@ -127,8 +137,8 @@ export default function AdminInventoryPage() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={3} className="px-4 py-6">
-                  <PageLoader compact />
+                <td colSpan={3} className="px-4 py-6 text-center text-muted-foreground">
+                  در حال بارگذاری...
                 </td>
               </tr>
             )}
@@ -147,7 +157,9 @@ export default function AdminInventoryPage() {
                   <td className="px-4 py-3">
                     <EditableCell
                       value={displayValue(tour, "price")}
-                      onCommit={(v) => handleCommit(tour.id, "price", v)}
+                      isActive={activeCells.has(cellKey(tour.id, "price"))}
+                      onActivate={() => handleActivate(tour.id, "price")}
+                      onChange={(v) => handleChange(tour.id, "price", v)}
                       onCancel={() => handleCancelField(tour.id, "price")}
                       formatDisplay={formatPrice}
                     />
@@ -155,7 +167,9 @@ export default function AdminInventoryPage() {
                   <td className="px-4 py-3">
                     <EditableCell
                       value={displayValue(tour, "quantity")}
-                      onCommit={(v) => handleCommit(tour.id, "quantity", v)}
+                      isActive={activeCells.has(cellKey(tour.id, "quantity"))}
+                      onActivate={() => handleActivate(tour.id, "quantity")}
+                      onChange={(v) => handleChange(tour.id, "quantity", v)}
                       onCancel={() => handleCancelField(tour.id, "quantity")}
                     />
                   </td>

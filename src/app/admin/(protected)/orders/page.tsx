@@ -7,6 +7,7 @@ import { useOrders } from "@/src/hooks/useOrders";
 import { formatPrice } from "@/src/lib/format";
 import { Pagination, PageLoader } from "@/src/components/ui";
 import { cn } from "@/src/lib/utils";
+import { useAutoCorrectPage } from "@/src/hooks/useAutoCorrectPage";
 
 const PAGE_SIZE = 5;
 
@@ -52,6 +53,7 @@ export default function AdminOrdersPage() {
   const totalPages = data
     ? Math.max(1, Math.ceil(data.totalCount / PAGE_SIZE))
     : 1;
+    useAutoCorrectPage(page, totalPages, isLoading, (p) => updateParams({ page: String(p) }));
   const toPersianDate = (ts: number) =>
     new Date(ts).toLocaleDateString("fa-IR");
 
