@@ -22,7 +22,7 @@ export function TourImage({ src, alt, gradient, className }: TourImageProps) {
       : `${process.env.NEXT_PUBLIC_API_URL}/files/${src}`;
 
   if (!url || failed) {
-    return <div className={cn("h-full w-full bg-gradient-to-br", gradient, className)} />;
+    return <div className={cn("h-full w-full bg-linear-to-br", gradient, className)} />;
   }
 
   return (

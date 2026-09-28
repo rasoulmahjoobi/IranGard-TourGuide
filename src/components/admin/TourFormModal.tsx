@@ -1,4 +1,5 @@
 "use client";
+import { uploadImage } from "@/src/lib/api/upload";
 import { TourImage } from "@/src/components/tour/TourImage";
 import { useEffect, useState, type ChangeEvent } from "react";
 import { useForm } from "react-hook-form";
@@ -44,14 +45,14 @@ function validateImageFile(file: File): string | null {
   return null;
 }
 
-function readAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
+// function readAsDataUrl(file: File): Promise<string> {
+//   return new Promise((resolve, reject) => {
+//     const reader = new FileReader();
+//     reader.onload = () => resolve(reader.result as string);
+//     reader.onerror = reject;
+//     reader.readAsDataURL(file);
+//   });
+// }
 
 const tourFormSchema = z.object({
   name: z.string().min(3, "نام تور باید حداقل ۳ کاراکتر باشد"),
@@ -122,7 +123,8 @@ export function TourFormModal({
   const [description, setDescription] = useState("");
   const [dateError, setDateError] = useState("");
   const [descError, setDescError] = useState("");
-
+  const [uploadingCount, setUploadingCount] = useState(0);
+  const isUploading = uploadingCount > 0;
   const {
     register,
     handleSubmit,
@@ -153,25 +155,33 @@ export function TourFormModal({
 
   const handleThumbnailChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
+
     const error = validateImageFile(file);
     if (error) {
       toast.error(error);
-      e.target.value = "";
       return;
     }
-    setThumbnail(await readAsDataUrl(file));
-    e.target.value = "";
+
+    setUploadingCount((c) => c + 1);
+    try {
+      setThumbnail(await uploadImage(file));
+    } catch {
+      toast.error("آپلود تصویر شاخص ناموفق بود");
+    } finally {
+      setUploadingCount((c) => c - 1);
+    }
   };
 
   const handleGalleryChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
     if (files.length === 0) return;
 
     const remaining = MAX_GALLERY_IMAGES - gallery.length;
     if (remaining <= 0) {
       toast.error(`حداکثر ${MAX_GALLERY_IMAGES} عکس برای گالری مجاز است`);
-      e.target.value = "";
       return;
     }
 
@@ -182,21 +192,30 @@ export function TourFormModal({
       );
     }
 
-    const validFiles: File[] = [];
-    for (const file of toProcess) {
+    const validFiles = toProcess.filter((file) => {
       const error = validateImageFile(file);
-      if (error) {
-        toast.error(`${file.name}: ${error}`);
-      } else {
-        validFiles.push(file);
-      }
-    }
+      if (error) toast.error(`${file.name}: ${error}`);
+      return !error;
+    });
+    if (validFiles.length === 0) return;
 
-    const dataUrls = await Promise.all(validFiles.map(readAsDataUrl));
-    setGallery((prev) => [...prev, ...dataUrls]);
-    e.target.value = "";
+    setUploadingCount((c) => c + validFiles.length);
+    const results = await Promise.all(
+      validFiles.map(async (file) => {
+        try {
+          return await uploadImage(file);
+        } catch {
+          toast.error(`آپلود ${file.name} ناموفق بود`);
+          return null;
+        } finally {
+          setUploadingCount((c) => c - 1);
+        }
+      }),
+    );
+
+    const hashes = results.filter((h): h is string => h !== null);
+    setGallery((prev) => [...prev, ...hashes].slice(0, MAX_GALLERY_IMAGES));
   };
-
   const removeGalleryImage = (index: number) => {
     setGallery((prev) => prev.filter((_, i) => i !== index));
   };
@@ -290,7 +309,12 @@ export function TourFormModal({
                 key={i}
                 className="relative aspect-square overflow-hidden rounded-xl border border-border"
               >
-<TourImage src={img} alt={`گالری ${i + 1}`} gradient="from-muted to-card" />                <button
+                <TourImage
+                  src={img}
+                  alt={`گالری ${i + 1}`}
+                  gradient="from-muted to-card"
+                />{" "}
+                <button
                   type="button"
                   onClick={() => removeGalleryImage(i)}
                   aria-label="حذف عکس"
@@ -444,7 +468,9 @@ export function TourFormModal({
           <Button type="button" variant="secondary" onClick={onClose}>
             انصراف
           </Button>
-          <Button type="submit">ذخیره تور</Button>
+          <Button type="submit" disabled={isUploading}>
+            {isUploading ? "در حال آپلود عکس..." : "ذخیره تور"}
+          </Button>
         </div>
       </form>
     </Modal>
