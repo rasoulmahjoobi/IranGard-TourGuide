@@ -1,5 +1,5 @@
 "use client";
-
+import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
@@ -24,13 +24,26 @@ export function ReserveButton({ tour }: { tour: Tour }) {
   const cartItems = useSelector((s: RootState) => s.cart.items);
   const customerPhone = useSelector((s: RootState) => s.cart.customerPhone);
 
+  const { data: paidOrdersData } = useQuery({
+    queryKey: ["orders", { phone: customerPhone, paid: "true" }],
+    queryFn: () => getOrders({ phone: customerPhone as string, paid: "true" }),
+    enabled: !!customerPhone, // بدون شماره تلفن هیچ درخواستی نمی‌ره، تا سفارش‌های بقیه رو نبینه
+  });
+
+  const alreadyReserved =
+    cartItems.some((item) => item.tourId === tour.id) ||
+    (paidOrdersData?.orders ?? []).some((order) =>
+      order.products.some((p) => p.id === tour.id),
+    );
   const [open, setOpen] = useState(false);
   const [peopleCount, setPeopleCount] = useState(1);
   const [isChecking, setIsChecking] = useState(false);
 
   const isInternational = tour.category === INTERNATIONAL_CATEGORY_ID;
   const landAvailable = isInternational && hasLandOption(tour.location);
-  const [travelType, setTravelType] = useState<"land" | "air">(landAvailable ? "land" : "air");
+  const [travelType, setTravelType] = useState<"land" | "air">(
+    landAvailable ? "land" : "air",
+  );
 
   const soldOut = tour.quantity <= 0;
 
@@ -43,6 +56,11 @@ export function ReserveButton({ tour }: { tour: Tour }) {
   const endDate = computeTourEndDate(tour.departureDate, tour.duration);
 
   const handleConfirm = async () => {
+    if (alreadyReserved) {
+      toast.error("شما این تور را قبلا رزرو کرده اید");
+      return;
+    }
+
     if (peopleCount < 1) {
       toast.error("تعداد نفرات باید حداقل ۱ باشد");
       return;
@@ -56,21 +74,38 @@ export function ReserveButton({ tour }: { tour: Tour }) {
     try {
       // ۱) تداخل با تورهایی که همین الان تو سبد (سفارش‌های در انتظار پرداخت) هستن
       const cartConflict = cartItems.find((item) =>
-        rangesOverlap(tour.departureDate, endDate, item.departureDate, item.endDate)
+        rangesOverlap(
+          tour.departureDate,
+          endDate,
+          item.departureDate,
+          item.endDate,
+        ),
       );
       if (cartConflict) {
-        toast.error(`این بازه با تور «${cartConflict.name}» که در سبد رزرو شماست تداخل زمانی دارد`);
+        toast.error(
+          `این بازه با تور «${cartConflict.name}» که در سبد رزرو شماست تداخل زمانی دارد`,
+        );
         return;
       }
 
       // ۲) تداخل با سفارش‌های قبلاً تأیید و پرداخت‌شده‌ی همین کاربر (اگه شماره تلفنش رو از قبل داریم)
       if (customerPhone) {
-        const { orders: paidOrders } = await getOrders({ phone: customerPhone, paid: "true" });
+        const { orders: paidOrders } = await getOrders({
+          phone: customerPhone,
+          paid: "true",
+        });
         const paidConflict = paidOrders.find((order) =>
-          rangesOverlap(tour.departureDate, endDate, order.startDate, order.endDate)
+          rangesOverlap(
+            tour.departureDate,
+            endDate,
+            order.startDate,
+            order.endDate,
+          ),
         );
         if (paidConflict) {
-          toast.error("این بازه با یکی از سفارش‌های تأییدشده‌ی قبلی شما تداخل زمانی دارد");
+          toast.error(
+            "این بازه با یکی از سفارش‌های تأییدشده‌ی قبلی شما تداخل زمانی دارد",
+          );
           return;
         }
       }
@@ -78,6 +113,7 @@ export function ReserveButton({ tour }: { tour: Tour }) {
       const cartItem: CartItem = {
         id: `${tour.id}-${Date.now()}`,
         tourId: tour.id,
+        category: tour.category,
         name: tour.name,
         thumbnail: tour.thumbnail,
         location: tour.location,
@@ -86,7 +122,10 @@ export function ReserveButton({ tour }: { tour: Tour }) {
         endDate,
         peopleCount,
         unitPrice,
-        ...(isInternational && { travelType, travelTypeLabel: TRAVEL_TYPE_LABEL[travelType] }),
+        ...(isInternational && {
+          travelType,
+          travelTypeLabel: TRAVEL_TYPE_LABEL[travelType],
+        }),
       };
 
       dispatch(addToCart(cartItem));
@@ -101,25 +140,41 @@ export function ReserveButton({ tour }: { tour: Tour }) {
   return (
     <>
       <button
-        disabled={soldOut}
+        disabled={soldOut || alreadyReserved}
         onClick={() => setOpen(true)}
         className="w-full rounded-full bg-linear-to-l from-primary to-coral py-3 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/30 transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
       >
-        {soldOut ? "پایان ظرفیت" : `بزن بریم ${tour.location}`}
+        {alreadyReserved
+          ? "شما این تور را قبلا رزرو کرده اید"
+          : soldOut
+            ? "پایان ظرفیت"
+            : `بزن بریم ${tour.location}`}
       </button>
 
-      <Modal open={open} onClose={() => setOpen(false)} title={`رزرو ${tour.name}`}>
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        title={`رزرو ${tour.name}`}
+      >
         <div className="flex flex-col gap-5">
           <div className="flex items-center gap-3 rounded-2xl bg-muted p-3">
             <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-card">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               {tour.thumbnail && (
-                <img src={tour.thumbnail} alt={tour.name} className="h-full w-full object-cover" />
+                <img
+                  src={tour.thumbnail}
+                  alt={tour.name}
+                  className="h-full w-full object-cover"
+                />
               )}
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-bold text-foreground">{tour.name}</span>
-              <span className="text-xs text-muted-foreground">{tour.duration}</span>
+              <span className="text-sm font-bold text-foreground">
+                {tour.name}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {tour.duration}
+              </span>
             </div>
           </div>
 
@@ -136,21 +191,29 @@ export function ReserveButton({ tour }: { tour: Tour }) {
               >
                 −
               </button>
-              <span className="w-8 text-center text-base font-bold text-foreground">{peopleCount}</span>
+              <span className="w-8 text-center text-base font-bold text-foreground">
+                {peopleCount}
+              </span>
               <button
                 type="button"
-                onClick={() => setPeopleCount((p) => Math.min(tour.quantity, p + 1))}
+                onClick={() =>
+                  setPeopleCount((p) => Math.min(tour.quantity, p + 1))
+                }
                 className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-foreground hover:border-primary"
               >
                 +
               </button>
-              <span className="text-xs text-muted-foreground">(حداکثر {tour.quantity} نفر)</span>
+              <span className="text-xs text-muted-foreground">
+                (حداکثر {tour.quantity} نفر)
+              </span>
             </div>
           </div>
 
           {isInternational && (
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-foreground">نوع سفر:</label>
+              <label className="text-sm font-medium text-foreground">
+                نوع سفر:
+              </label>
               {landAvailable ? (
                 <div className="grid grid-cols-2 gap-2">
                   <button
@@ -158,13 +221,19 @@ export function ReserveButton({ tour }: { tour: Tour }) {
                     onClick={() => setTravelType("land")}
                     className={cn(
                       "flex flex-col items-center gap-1.5 rounded-2xl border-2 p-3 transition",
-                      travelType === "land" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                      travelType === "land"
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/40",
                     )}
                   >
                     <Bus className="h-5 w-5 text-turquoise" />
-                    <span className="text-xs font-semibold text-foreground">زمینی/دریایی</span>
+                    <span className="text-xs font-semibold text-foreground">
+                      زمینی/دریایی
+                    </span>
                     <span className="text-[11px] text-muted-foreground">
-                      {formatPrice(Math.round(tour.price * TRAVEL_TYPE_MULTIPLIER.land))}
+                      {formatPrice(
+                        Math.round(tour.price * TRAVEL_TYPE_MULTIPLIER.land),
+                      )}
                     </span>
                   </button>
                   <button
@@ -172,13 +241,19 @@ export function ReserveButton({ tour }: { tour: Tour }) {
                     onClick={() => setTravelType("air")}
                     className={cn(
                       "flex flex-col items-center gap-1.5 rounded-2xl border-2 p-3 transition",
-                      travelType === "air" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                      travelType === "air"
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/40",
                     )}
                   >
                     <Plane className="h-5 w-5 text-coral" />
-                    <span className="text-xs font-semibold text-foreground">هوایی</span>
+                    <span className="text-xs font-semibold text-foreground">
+                      هوایی
+                    </span>
                     <span className="text-[11px] text-muted-foreground">
-                      {formatPrice(Math.round(tour.price * TRAVEL_TYPE_MULTIPLIER.air))}
+                      {formatPrice(
+                        Math.round(tour.price * TRAVEL_TYPE_MULTIPLIER.air),
+                      )}
                     </span>
                   </button>
                 </div>
@@ -193,7 +268,9 @@ export function ReserveButton({ tour }: { tour: Tour }) {
 
           <div className="flex items-center justify-between rounded-2xl bg-accent/10 p-4">
             <span className="text-sm text-muted-foreground">مبلغ کل</span>
-            <span className="text-lg font-extrabold text-primary">{formatPrice(totalPrice)}</span>
+            <span className="text-lg font-extrabold text-primary">
+              {formatPrice(totalPrice)}
+            </span>
           </div>
 
           <Button onClick={handleConfirm} disabled={isChecking}>
