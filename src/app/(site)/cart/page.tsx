@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
+import { toast } from "react-toastify";
 import { Trash2, Users, Plane, Bus, ShoppingBag } from "lucide-react";
-import { Button } from "@/src/components/ui";
-import { removeFromCart } from "@/src/store/cartSlice";
+import { Button, ConfirmDialog, PageLoader } from "@/src/components/ui";
+import { removeFromCart, type CartItem } from "@/src/store/cartSlice";
 import type { RootState } from "@/src/store/store";
 import { formatPrice } from "@/src/lib/format";
 import { toPersianDate } from "@/src/lib/dateUtils";
@@ -15,8 +17,19 @@ export default function CartPage() {
   const dispatch = useDispatch();
   const router = useRouter();
   const items = useSelector((s: RootState) => s.cart.items);
+  const hydrated = useSelector((s: RootState) => s.cart.hydrated);
+  const [pendingRemove, setPendingRemove] = useState<CartItem | null>(null);
+
+  if (!hydrated) return <PageLoader />;
 
   const total = items.reduce((sum, item) => sum + item.unitPrice * item.peopleCount, 0);
+
+  const confirmRemove = () => {
+    if (!pendingRemove) return;
+    dispatch(removeFromCart(pendingRemove.id));
+    toast.success("تور از سبد رزرو حذف شد");
+    setPendingRemove(null);
+  };
 
   if (items.length === 0) {
     return (
@@ -77,7 +90,7 @@ export default function CartPage() {
                 {formatPrice(item.unitPrice * item.peopleCount)}
               </span>
               <button
-                onClick={() => dispatch(removeFromCart(item.id))}
+                onClick={() => setPendingRemove(item)}
                 className="flex items-center gap-1 text-xs font-semibold text-red-600 hover:underline"
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -94,6 +107,16 @@ export default function CartPage() {
           جمع کل: <span className="text-primary">{formatPrice(total)}</span>
         </span>
       </div>
+
+      <ConfirmDialog
+        open={pendingRemove !== null}
+        title="حذف تور از سبد رزرو"
+        description={`آیا از حذف «${pendingRemove?.name ?? ""}» از سبد رزرو مطمئن هستید؟`}
+        confirmLabel="حذف شود"
+        danger
+        onConfirm={confirmRemove}
+        onCancel={() => setPendingRemove(null)}
+      />
     </div>
   );
 }

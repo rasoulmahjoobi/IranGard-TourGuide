@@ -1,6 +1,6 @@
 import { apiClient } from "@/src/lib/apiClient";
 import type { Order } from "@/src/types/order";
-
+import type { PersonInfo } from "@/src/types/order";
 export interface GetOrdersParams {
   delivered?: string;
   phone?: string;
@@ -31,11 +31,20 @@ export interface CreateOrderPayload {
   phone: string;
   startDate: string;
   endDate: string;
-  products: { id: number; name: string; count: string; price: string }[];
+  leader: PersonInfo;
+  products: {
+    id: number;
+    name: string;
+    count: string;
+    price: string;
+    origin: "tehran" | "destination";
+    originLabel: string;
+    travelTypeLabel?: string;
+    companions: PersonInfo[];
+  }[];
   prices: number;
   delivered: string;
 }
-
 export interface CreatedOrder {
   id: number;
   [key: string]: unknown;

@@ -3,6 +3,7 @@ import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 export interface CartItem {
   id: string;
   tourId: number;
+  category: number;
   name: string;
   thumbnail: string;
   location: string;
@@ -18,6 +19,7 @@ export interface CartItem {
 interface CartState {
   items: CartItem[];
   customerPhone: string | null;
+  hydrated: boolean;
 }
 
 const ITEMS_KEY = "cart_items";
@@ -60,7 +62,7 @@ function persistPhone(phone: string) {
   }
 }
 
-const initialState: CartState = { items: [], customerPhone: null };
+const initialState: CartState = { items: [], customerPhone: null, hydrated: false };
 
 const cartSlice = createSlice({
   name: "cart",
@@ -69,6 +71,7 @@ const cartSlice = createSlice({
     hydrateCart: (state) => {
       state.items = loadItems();
       state.customerPhone = loadPhone();
+      state.hydrated = true;
     },
     addToCart: (state, action: PayloadAction<CartItem>) => {
       state.items.push(action.payload);
