@@ -60,7 +60,17 @@ export async function createOrder(payload: CreateOrderPayload): Promise<CreatedO
   return data;
 }
 
+export async function getMyOrders(): Promise<OrdersResult> {
+  const { data } = await apiClient.get<Order[]>("/orders/me");
+  return { orders: data, totalCount: data.length };
+}
+
 export async function updateOrder(id: number, patch: Partial<Order>): Promise<Order> {
   const { data } = await apiClient.patch<Order>(`/orders/${id}`, patch);
+  return data;
+}
+
+export async function getOrderById(id: number): Promise<Order> {
+  const { data } = await apiClient.get<Order>(`/orders/${id}`);
   return data;
 }

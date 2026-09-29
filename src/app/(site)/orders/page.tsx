@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { PackageOpen, Users, XCircle, CheckCircle2, Clock } from "lucide-react";
-import { useOrders } from "@/src/hooks/useOrders";
+import { useMyOrders } from "@/src/hooks/useOrders";
 import { useCancelOrder } from "@/src/hooks/useOrderMutations";
 import { CancelOrderModal } from "@/src/components/orders/CancelOrderModal";
 import { Button, PageLoader } from "@/src/components/ui";
@@ -98,23 +98,25 @@ function OrderCard({
 }
 
 export default function OrdersPage() {
-  const customerPhone = useSelector((s: RootState) => s.cart.customerPhone);
+  const user = useSelector((s: RootState) => s.auth.user);
+  const authHydrated = useSelector((s: RootState) => s.auth.hydrated);
   const cartItems = useSelector((s: RootState) => s.cart.items);
   const hydrated = useSelector((s: RootState) => s.cart.hydrated);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const [tab, setTab] = useState<Tab>("confirmed");
   const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
   const cancelMutation = useCancelOrder();
 
-  const { data, isLoading } = useOrders(
-    { phone: customerPhone ?? undefined, _sort: "createdAt", _order: "desc" },
-    { enabled: !!customerPhone },
-  );
+  const isCustomer = user?.role === "customer";
+  const { data, isLoading } = useMyOrders({ enabled: isCustomer });
 
-  if (!hydrated) return <PageLoader />;
+  if (!mounted || !hydrated || !authHydrated) return <PageLoader />;
 
   const allOrders = data?.orders ?? [];
   const confirmedOrders = allOrders.filter((o) => o.paid && !o.cancelled);
+  const pendingOrders = allOrders.filter((o) => !o.paid && !o.cancelled);
   const cancelledOrders = allOrders.filter((o) => o.cancelled);
 
   const tabs: {
@@ -133,7 +135,7 @@ export default function OrdersPage() {
       key: "pending",
       label: "در انتظار پرداخت",
       icon: Clock,
-      count: cartItems.length,
+      count: pendingOrders.length + cartItems.length,
     },
     {
       key: "cancelled",
@@ -192,16 +194,16 @@ export default function OrdersPage() {
         ))}
       </div>
 
-      {!customerPhone && tab !== "pending" && (
+      {!isCustomer && tab !== "pending" && (
         <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
           <PackageOpen className="h-8 w-8" />
-          هنوز سفارشی از این مرورگر ثبت نکرده‌اید.
+          برای دیدن سفارش‌ها ابتدا وارد حساب کاربری شوید.
         </div>
       )}
 
-      {customerPhone && isLoading && <PageLoader compact />}
+      {isCustomer && isLoading && <PageLoader compact />}
 
-      {tab === "confirmed" && customerPhone && !isLoading && (
+      {tab === "confirmed" && isCustomer && !isLoading && (
         <div className="flex flex-col gap-4">
           {confirmedOrders.length === 0 ? (
             <p className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
@@ -221,41 +223,48 @@ export default function OrdersPage() {
 
       {tab === "pending" && (
         <div className="flex flex-col gap-4">
-          {cartItems.length === 0 ? (
+          {pendingOrders.map((order) => (
+            <div key={order.id} className="flex flex-col gap-3">
+              <OrderCard order={order} />
+              <a
+                href={`${process.env.NEXT_PUBLIC_API_URL}/payment/gateway/${order.id}`}
+                className="w-full rounded-full bg-linear-to-l from-primary to-coral py-3 text-center text-sm font-bold text-primary-foreground"
+              >
+                ادامه پرداخت سفارش #{order.id}
+              </a>
+            </div>
+          ))}
+          {cartItems.map((item) => (
+            <div
+              key={item.id}
+              className="flex items-center justify-between rounded-2xl border border-border bg-card p-4 shadow-sm"
+            >
+              <div className="flex flex-col gap-1">
+                <span className="text-sm font-bold text-foreground">{item.name}</span>
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Users className="h-3 w-3" />
+                  {item.peopleCount} نفر • {toPersianDate(item.departureDate)}
+                </span>
+              </div>
+              <span className="text-sm font-extrabold text-primary">
+                {formatPrice(item.unitPrice * item.peopleCount)}
+              </span>
+            </div>
+          ))}
+          {cartItems.length > 0 && (
+            <Link href={ROUTES.cart}>
+              <Button className="w-full">مشاهده و تکمیل سبد رزرو</Button>
+            </Link>
+          )}
+          {cartItems.length === 0 && pendingOrders.length === 0 && (
             <p className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-              سبد رزرو شما خالی است.
+              سفارش در انتظار پرداختی وجود ندارد.
             </p>
-          ) : (
-            <>
-              {cartItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between rounded-2xl border border-border bg-card p-4 shadow-sm"
-                >
-                  <div className="flex flex-col gap-1">
-                    <span className="text-sm font-bold text-foreground">
-                      {item.name}
-                    </span>
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Users className="h-3 w-3" />
-                      {item.peopleCount} نفر •{" "}
-                      {toPersianDate(item.departureDate)}
-                    </span>
-                  </div>
-                  <span className="text-sm font-extrabold text-primary">
-                    {formatPrice(item.unitPrice * item.peopleCount)}
-                  </span>
-                </div>
-              ))}
-              <Link href={ROUTES.cart}>
-                <Button className="w-full">مشاهده و تکمیل سبد رزرو</Button>
-              </Link>
-            </>
           )}
         </div>
       )}
 
-      {tab === "cancelled" && customerPhone && !isLoading && (
+      {tab === "cancelled" && isCustomer && !isLoading && (
         <div className="flex flex-col gap-4">
           {cancelledOrders.length === 0 ? (
             <p className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">

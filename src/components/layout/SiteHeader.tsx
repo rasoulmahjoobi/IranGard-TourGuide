@@ -3,17 +3,29 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { ShoppingCart, Menu, X } from "lucide-react";
+import { ShoppingCart, Menu, X, LogOut, UserRound } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import { toast } from "react-toastify";
 import { SITE_NAME, ROUTES } from "@/src/lib/constants";
 import { Logo } from "@/src/components/icons/Logo";
 import { AboutModalTrigger } from "./AboutModalTrigger";
 import { ContactModalTrigger } from "./ContactModalTrigger";
-import { useSelector } from "react-redux";
+import { logout } from "@/src/store/authSlice";
+import { clearAuthCookies } from "@/src/lib/cookies";
 import type { RootState } from "@/src/store/store";
+
 const navLinkClass =
   "relative cursor-pointer transition-colors hover:text-primary after:absolute after:-bottom-1 after:right-0 after:h-0.5 after:w-0 after:bg-primary after:transition-all after:duration-300 hover:after:w-full";
 
-function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
+function MobileMenu({
+  open,
+  onClose,
+  isCustomer,
+}: {
+  open: boolean;
+  onClose: () => void;
+  isCustomer: boolean;
+}) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -67,13 +79,24 @@ function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
           >
             تورهای خارجی
           </Link>
-          <Link
-            href={ROUTES.orders}
-            onClick={onClose}
-            className="rounded-xl px-3 py-3 transition hover:bg-muted"
-          >
-            سفارش‌های من
-          </Link>
+          {isCustomer && (
+            <Link
+              href={ROUTES.orders}
+              onClick={onClose}
+              className="rounded-xl px-3 py-3 transition hover:bg-muted"
+            >
+              سفارش‌های من
+            </Link>
+          )}
+          {!isCustomer && (
+            <Link
+              href={ROUTES.login}
+              onClick={onClose}
+              className="rounded-xl px-3 py-3 transition hover:bg-muted"
+            >
+              ورود / ثبت‌نام
+            </Link>
+          )}
           <div onClick={onClose}>
             <AboutModalTrigger
               label="درباره ما"
@@ -95,7 +118,17 @@ function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
 
 export function SiteHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const dispatch = useDispatch();
   const cartCount = useSelector((s: RootState) => s.cart.items.length);
+  const user = useSelector((s: RootState) => s.auth.user);
+  const isCustomer = user?.role === "customer";
+
+  const handleLogout = () => {
+    dispatch(logout());
+    clearAuthCookies();
+    toast.success("با موفقیت خارج شدید");
+    window.location.href = ROUTES.home;
+  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md">
@@ -118,9 +151,11 @@ export function SiteHeader() {
 
           <AboutModalTrigger label="درباره ما" className={navLinkClass} />
           <ContactModalTrigger label="تماس با ما" className={navLinkClass} />
-          <Link href={ROUTES.orders} className={navLinkClass}>
-            سفارش‌های من
-          </Link>
+          {isCustomer && (
+            <Link href={ROUTES.orders} className={navLinkClass}>
+              سفارش‌های من
+            </Link>
+          )}
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-3">
@@ -137,12 +172,31 @@ export function SiteHeader() {
               </span>
             )}
           </Link>
-          <Link
-            href={ROUTES.adminLogin}
-            className="rounded-full bg-linear-to-l from-primary to-coral px-5 py-2 text-sm font-bold text-primary-foreground shadow-md shadow-primary/20 transition hover:shadow-lg hover:shadow-primary/30"
-          >
-            مدیریت
-          </Link>
+          {isCustomer ? (
+            <button
+              onClick={handleLogout}
+              className="hidden items-center gap-1.5 rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:border-red-400 hover:text-red-600 sm:flex"
+            >
+              <LogOut className="h-4 w-4" />
+              خروج
+            </button>
+          ) : (
+            <>
+              <Link
+                href={ROUTES.login}
+                className="hidden items-center gap-1.5 rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:border-primary hover:text-primary sm:flex"
+              >
+                <UserRound className="h-4 w-4" />
+                ورود
+              </Link>
+              <Link
+                href={ROUTES.adminLogin}
+                className="rounded-full bg-linear-to-l from-primary to-coral px-5 py-2 text-sm font-bold text-primary-foreground shadow-md shadow-primary/20 transition hover:shadow-lg hover:shadow-primary/30"
+              >
+                مدیریت
+              </Link>
+            </>
+          )}
           <button
             onClick={() => setMobileOpen(true)}
             className="rounded-full border border-border p-2 text-foreground md:hidden"
@@ -153,7 +207,7 @@ export function SiteHeader() {
         </div>
       </div>
 
-      <MobileMenu open={mobileOpen} onClose={() => setMobileOpen(false)} />
+      <MobileMenu open={mobileOpen} onClose={() => setMobileOpen(false)} isCustomer={isCustomer} />
     </header>
   );
 }

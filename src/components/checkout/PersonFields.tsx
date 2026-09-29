@@ -11,9 +11,10 @@ interface PersonFieldsProps {
   prefix: string;
   register: UseFormRegister<CheckoutValues>;
   errors?: PersonErrors;
+  lockPhone?: boolean;
 }
 
-export function PersonFields({ prefix, register, errors }: PersonFieldsProps) {
+export function PersonFields({ prefix, register, errors, lockPhone }: PersonFieldsProps) {
   const name = (field: keyof PersonValues) => `${prefix}.${field}` as Path<CheckoutValues>;
 
   return (
@@ -30,6 +31,7 @@ export function PersonFields({ prefix, register, errors }: PersonFieldsProps) {
         inputMode="numeric"
         maxLength={11}
         placeholder="09123456789"
+        readOnly={lockPhone}
         {...register(name("phone"))}
         error={errors?.phone?.message}
       />

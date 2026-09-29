@@ -20,7 +20,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         className={cn(
           "rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20",
           error && "border-red-500 focus:border-red-500 focus:ring-red-500/20",
-          className
+          props.readOnly && "bg-muted text-muted-foreground",
+          className,
         )}
         {...props}
       />

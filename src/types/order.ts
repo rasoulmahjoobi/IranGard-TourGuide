@@ -25,6 +25,7 @@ export interface Order {
   lastname: string;
   address: string;
   phone: string;
+  customerUsername?: string;
   startDate: string;
   endDate: string;
   expectAt?: number;

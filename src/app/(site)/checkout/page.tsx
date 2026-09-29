@@ -11,7 +11,7 @@ import { Button, PageLoader } from "@/src/components/ui";
 import { PersonFields } from "@/src/components/checkout/PersonFields";
 import { checkoutSchema, type CheckoutValues } from "@/src/lib/schemas/checkout.schema";
 import { createOrder } from "@/src/lib/api/orders";
-import { clearCart, setCustomerPhone, type CartItem } from "@/src/store/cartSlice";
+import { clearCart, type CartItem } from "@/src/store/cartSlice";
 import type { RootState } from "@/src/store/store";
 import { formatPrice } from "@/src/lib/format";
 import { toPersianDate } from "@/src/lib/dateUtils";
@@ -26,7 +26,15 @@ interface CreatedOrder {
   total: number;
 }
 
-function CheckoutForm({ items, onCreated }: { items: CartItem[]; onCreated: (order: CreatedOrder) => void }) {
+function CheckoutForm({
+  items,
+  onCreated,
+  defaultLeader,
+}: {
+  items: CartItem[];
+  onCreated: (order: CreatedOrder) => void;
+  defaultLeader: { fullName: string; phone: string };
+}) {
   const dispatch = useDispatch();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -37,7 +45,7 @@ function CheckoutForm({ items, onCreated }: { items: CartItem[]; onCreated: (ord
   } = useForm<CheckoutValues>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
-      leader: { ...emptyPerson },
+      leader: { ...emptyPerson, ...defaultLeader },
       tours: items.map((item) => ({
         origin: "tehran" as const,
         companions: Array.from({ length: Math.max(0, item.peopleCount - 1) }, () => ({ ...emptyPerson })),
@@ -82,10 +90,11 @@ function CheckoutForm({ items, onCreated }: { items: CartItem[]; onCreated: (ord
         delivered: "false",
       });
 
-      // شماره سرگروه رو برای چک تداخل رزروهای بعدی نگه می‌داریم
-      dispatch(setCustomerPhone(leader.phone));
+      // شماره تماس از حساب کاربری در بک‌اند می‌آید، نه از localStorage
       onCreated({ id: order.id, total });
       dispatch(clearCart());
+      const gatewayUrl = `${process.env.NEXT_PUBLIC_API_URL}/payment/gateway/${order.id}`;
+      window.location.assign(gatewayUrl);
     } catch (err: unknown) {
       const backendMsg = (err as { response?: { data?: { errors?: { msg?: string }[] } } })?.response?.data
         ?.errors?.[0]?.msg;
@@ -109,7 +118,7 @@ function CheckoutForm({ items, onCreated }: { items: CartItem[]; onCreated: (ord
             <User className="h-4 w-4" />
             اطلاعات سرگروه
           </div>
-          <PersonFields prefix="leader" register={register} errors={errors.leader} />
+          <PersonFields prefix="leader" register={register} errors={errors.leader} lockPhone />
         </section>
 
         {items.map((item, i) => {
@@ -188,7 +197,16 @@ export default function CheckoutPage() {
   const router = useRouter();
   const items = useSelector((s: RootState) => s.cart.items);
   const hydrated = useSelector((s: RootState) => s.cart.hydrated);
+  const user = useSelector((s: RootState) => s.auth.user);
+  const authHydrated = useSelector((s: RootState) => s.auth.hydrated);
   const [createdOrder, setCreatedOrder] = useState<CreatedOrder | null>(null);
+
+  useEffect(() => {
+    if (!authHydrated) return;
+    if (user?.role !== "customer") {
+      router.replace(`${ROUTES.login}?next=${ROUTES.checkout}`);
+    }
+  }, [authHydrated, user, router]);
 
   useEffect(() => {
     if (hydrated && items.length === 0 && !createdOrder) {
@@ -196,7 +214,8 @@ export default function CheckoutPage() {
     }
   }, [hydrated, items.length, createdOrder, router]);
 
-  if (!hydrated) return <PageLoader />;
+  if (!hydrated || !authHydrated) return <PageLoader />;
+  if (user?.role !== "customer") return <PageLoader />;
 
   if (createdOrder) {
     const gatewayUrl = `${process.env.NEXT_PUBLIC_API_URL}/payment/gateway/${createdOrder.id}`;
@@ -210,11 +229,10 @@ export default function CheckoutPage() {
           شماره سفارش: <span className="font-bold text-foreground">{createdOrder.id}</span> — مبلغ قابل پرداخت:{" "}
           <span className="font-bold text-primary">{formatPrice(createdOrder.total)}</span>
         </p>
-        <a>
+        <a
           href={gatewayUrl}
           className="w-full rounded-full bg-linear-to-l from-primary to-coral py-3 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/30 transition hover:scale-[1.02]"
-        
-        
+        >
           پرداخت و تکمیل رزرو
         </a>
       </div>
@@ -223,5 +241,14 @@ export default function CheckoutPage() {
 
   if (items.length === 0) return null;
 
-  return <CheckoutForm items={items} onCreated={setCreatedOrder} />;
+  return (
+    <CheckoutForm
+      items={items}
+      onCreated={setCreatedOrder}
+      defaultLeader={{
+        fullName: user.name,
+        phone: user.phone || user.username,
+      }}
+    />
+  );
 }

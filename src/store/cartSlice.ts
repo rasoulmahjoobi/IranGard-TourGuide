@@ -18,12 +18,10 @@ export interface CartItem {
 
 interface CartState {
   items: CartItem[];
-  customerPhone: string | null;
   hydrated: boolean;
 }
 
 const ITEMS_KEY = "cart_items";
-const PHONE_KEY = "cart_customer_phone";
 
 function loadItems(): CartItem[] {
   if (typeof window === "undefined") return [];
@@ -32,15 +30,6 @@ function loadItems(): CartItem[] {
     return raw ? (JSON.parse(raw) as CartItem[]) : [];
   } catch {
     return [];
-  }
-}
-
-function loadPhone(): string | null {
-  if (typeof window === "undefined") return null;
-  try {
-    return localStorage.getItem(PHONE_KEY);
-  } catch {
-    return null;
   }
 }
 
@@ -53,16 +42,7 @@ function persistItems(items: CartItem[]) {
   }
 }
 
-function persistPhone(phone: string) {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(PHONE_KEY, phone);
-  } catch {
-    // نادیده می‌گیریم
-  }
-}
-
-const initialState: CartState = { items: [], customerPhone: null, hydrated: false };
+const initialState: CartState = { items: [], hydrated: false };
 
 const cartSlice = createSlice({
   name: "cart",
@@ -70,7 +50,6 @@ const cartSlice = createSlice({
   reducers: {
     hydrateCart: (state) => {
       state.items = loadItems();
-      state.customerPhone = loadPhone();
       state.hydrated = true;
     },
     addToCart: (state, action: PayloadAction<CartItem>) => {
@@ -85,12 +64,8 @@ const cartSlice = createSlice({
       state.items = [];
       persistItems(state.items);
     },
-    setCustomerPhone: (state, action: PayloadAction<string>) => {
-      state.customerPhone = action.payload;
-      persistPhone(action.payload);
-    },
   },
 });
 
-export const { hydrateCart, addToCart, removeFromCart, clearCart, setCustomerPhone } = cartSlice.actions;
+export const { hydrateCart, addToCart, removeFromCart, clearCart } = cartSlice.actions;
 export default cartSlice.reducer;

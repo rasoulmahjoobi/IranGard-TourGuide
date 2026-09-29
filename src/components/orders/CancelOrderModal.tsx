@@ -99,7 +99,7 @@ export function CancelOrderModal({
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="!bg-gradient-to-l !from-red-600 !to-red-500"
+            className="bg-linear-to-l from-red-600! to-red-500!"
           >
             {isSubmitting ? "در حال لغو..." : "لغو سفارش و بازگشت وجه"}
           </Button>

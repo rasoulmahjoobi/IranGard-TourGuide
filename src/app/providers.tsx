@@ -6,16 +6,34 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { store } from "@/src/store/store";
-import { setAccessToken } from "@/src/store/authSlice";
+import { hydrateAuth } from "@/src/store/authSlice";
 import { getAccessTokenCookie } from "@/src/lib/cookies";
 import { hydrateCart } from "@/src/store/cartSlice";
+import { decodeJwt } from "@/src/lib/jwt";
 
 /** بعد از رفرش صفحه، اگه کوکی توکن داشت، Redux رو دوباره باهاش پر می‌کنه */
 function AuthRehydrator() {
   useEffect(() => {
     const token = getAccessTokenCookie();
-    if (token) {
-      store.dispatch(setAccessToken(token));
+    if (!token) {
+      store.dispatch(hydrateAuth({ user: null, accessToken: null }));
+      return;
+    }
+    try {
+      const decoded = decodeJwt(token);
+      store.dispatch(
+        hydrateAuth({
+          user: {
+            username: decoded.username,
+            name: decoded.name,
+            role: decoded.role,
+            phone: decoded.phone,
+          },
+          accessToken: token,
+        }),
+      );
+    } catch {
+      store.dispatch(hydrateAuth({ user: null, accessToken: null }));
     }
   }, []);
   return null;

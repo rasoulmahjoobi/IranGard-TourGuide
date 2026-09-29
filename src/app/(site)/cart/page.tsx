@@ -18,6 +18,7 @@ export default function CartPage() {
   const router = useRouter();
   const items = useSelector((s: RootState) => s.cart.items);
   const hydrated = useSelector((s: RootState) => s.cart.hydrated);
+  const user = useSelector((s: RootState) => s.auth.user);
   const [pendingRemove, setPendingRemove] = useState<CartItem | null>(null);
 
   if (!hydrated) return <PageLoader />;
@@ -102,7 +103,7 @@ export default function CartPage() {
       </div>
 
       <div className="flex items-center justify-between rounded-2xl border border-border bg-card p-5 shadow-sm">
-        <Button onClick={() => router.push(ROUTES.checkout)}>نهایی کردن سبد رزرو</Button>
+        <Button onClick={() => router.push(user?.role === "customer" ? ROUTES.checkout : `${ROUTES.login}?next=${ROUTES.checkout}`)}>نهایی کردن سبد رزرو</Button>
         <span className="text-base font-bold text-foreground">
           جمع کل: <span className="text-primary">{formatPrice(total)}</span>
         </span>

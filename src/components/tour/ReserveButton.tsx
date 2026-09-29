@@ -8,7 +8,7 @@ import { Modal, Button } from "@/src/components/ui";
 import { addToCart, type CartItem } from "@/src/store/cartSlice";
 import type { RootState } from "@/src/store/store";
 import type { Tour } from "@/src/types/tour";
-import { getOrders } from "@/src/lib/api/orders";
+import { getMyOrders } from "@/src/lib/api/orders";
 import { formatPrice } from "@/src/lib/format";
 import { computeTourEndDate, rangesOverlap } from "@/src/lib/tourDates";
 import {
@@ -22,18 +22,19 @@ import { cn } from "@/src/lib/utils";
 export function ReserveButton({ tour }: { tour: Tour }) {
   const dispatch = useDispatch();
   const cartItems = useSelector((s: RootState) => s.cart.items);
-  const customerPhone = useSelector((s: RootState) => s.cart.customerPhone);
+  const user = useSelector((s: RootState) => s.auth.user);
+  const isCustomer = user?.role === "customer";
 
-  const { data: paidOrdersData } = useQuery({
-    queryKey: ["orders", { phone: customerPhone, paid: "true" }],
-    queryFn: () => getOrders({ phone: customerPhone as string, paid: "true" }),
-    enabled: !!customerPhone, // بدون شماره تلفن هیچ درخواستی نمی‌ره، تا سفارش‌های بقیه رو نبینه
+  const { data: myOrdersData } = useQuery({
+    queryKey: ["orders", "me"],
+    queryFn: getMyOrders,
+    enabled: isCustomer,
   });
 
   const alreadyReserved =
     cartItems.some((item) => item.tourId === tour.id) ||
-    (paidOrdersData?.orders ?? []).some((order) =>
-      order.products.some((p) => p.id === tour.id),
+    (myOrdersData?.orders ?? []).some(
+      (order) => !order.cancelled && order.products.some((p) => p.id === tour.id),
     );
   const [open, setOpen] = useState(false);
   const [peopleCount, setPeopleCount] = useState(1);
@@ -89,18 +90,12 @@ export function ReserveButton({ tour }: { tour: Tour }) {
       }
 
       // ۲) تداخل با سفارش‌های قبلاً تأیید و پرداخت‌شده‌ی همین کاربر (اگه شماره تلفنش رو از قبل داریم)
-      if (customerPhone) {
-        const { orders: paidOrders } = await getOrders({
-          phone: customerPhone,
-          paid: "true",
-        });
-        const paidConflict = paidOrders.find((order) =>
-          rangesOverlap(
-            tour.departureDate,
-            endDate,
-            order.startDate,
-            order.endDate,
-          ),
+      if (isCustomer) {
+        const { orders: myOrders } = await getMyOrders();
+        const paidConflict = myOrders.find(
+          (order) =>
+            !order.cancelled &&
+            rangesOverlap(tour.departureDate, endDate, order.startDate, order.endDate),
         );
         if (paidConflict) {
           toast.error(
