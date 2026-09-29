@@ -32,6 +32,9 @@ export interface Order {
   products: OrderProduct[];
   prices: number;
   delivered: string; // "true" یا "false"
+  cancelled?: boolean;
+  cancelledBy?: "admin" | "customer";
+  refundCard?: string;
   paid: boolean;
   createdAt: number;
 }

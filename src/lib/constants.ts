@@ -7,6 +7,7 @@ export const ROUTES = {
   subcategory: (id: string) => `/subcategory/${id}`,
   product: (id: string) => `/product/${id}`,
   cart: "/cart",
+    orders: "/orders",
   checkout: "/checkout",
   paymentResult: "/payment/result",
   adminLogin: "/admin/login",
