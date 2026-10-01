@@ -1,5 +1,5 @@
 "use client";
-import { uploadImage } from "@/src/lib/api/upload";
+import { uploadImage, toStoredImageId } from "@/src/lib/api/upload";
 import { TourImage } from "@/src/components/tour/TourImage";
 import { useEffect, useState, type ChangeEvent } from "react";
 import { useForm } from "react-hook-form";
@@ -244,7 +244,13 @@ export function TourFormModal({
       ? date.convert(gregorian, gregorian_en).format("YYYY-MM-DD")
       : (initialTour!.departureDate as string);
 
-    onSubmit({ ...values, thumbnail, gallery, departureDate, description });
+    onSubmit({
+      ...values,
+      thumbnail: toStoredImageId(thumbnail),
+      gallery: gallery.map(toStoredImageId).filter(Boolean),
+      departureDate,
+      description,
+    });
   };
 
   return (

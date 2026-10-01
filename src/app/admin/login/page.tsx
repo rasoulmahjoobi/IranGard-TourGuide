@@ -10,7 +10,7 @@ import { useLogin } from "@/src/hooks/useLogin";
 import { ROUTES, SITE_NAME } from "@/src/lib/constants";
 
 export default function AdminLoginPage() {
-  const { mutate, isPending } = useLogin();
+  const { mutate, isPending } = useLogin({ expectedRole: "admin" });
   const {
     register,
     handleSubmit,

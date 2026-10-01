@@ -3,16 +3,29 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { ShoppingCart, Menu, X } from "lucide-react";
+import { ShoppingCart, Menu, X, LogOut, UserRound } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import { toast } from "react-toastify";
 import { SITE_NAME, ROUTES } from "@/src/lib/constants";
 import { Logo } from "@/src/components/icons/Logo";
 import { AboutModalTrigger } from "./AboutModalTrigger";
 import { ContactModalTrigger } from "./ContactModalTrigger";
+import { logout } from "@/src/store/authSlice";
+import { clearAuthCookies } from "@/src/lib/cookies";
+import type { RootState } from "@/src/store/store";
 
 const navLinkClass =
   "relative cursor-pointer transition-colors hover:text-primary after:absolute after:-bottom-1 after:right-0 after:h-0.5 after:w-0 after:bg-primary after:transition-all after:duration-300 hover:after:w-full";
 
-function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
+function MobileMenu({
+  open,
+  onClose,
+  isCustomer,
+}: {
+  open: boolean;
+  onClose: () => void;
+  isCustomer: boolean;
+}) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -52,12 +65,38 @@ function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
         </div>
 
         <nav className="flex flex-col gap-1 p-3 text-sm font-semibold text-foreground">
-          <Link href={ROUTES.domestic} onClick={onClose} className="rounded-xl px-3 py-3 transition hover:bg-muted">
+          <Link
+            href={ROUTES.domestic}
+            onClick={onClose}
+            className="rounded-xl px-3 py-3 transition hover:bg-muted"
+          >
             تورهای داخلی
           </Link>
-          <Link href={ROUTES.category("4")} onClick={onClose} className="rounded-xl px-3 py-3 transition hover:bg-muted">
+          <Link
+            href={ROUTES.category("4")}
+            onClick={onClose}
+            className="rounded-xl px-3 py-3 transition hover:bg-muted"
+          >
             تورهای خارجی
           </Link>
+          {isCustomer && (
+            <Link
+              href={ROUTES.orders}
+              onClick={onClose}
+              className="rounded-xl px-3 py-3 transition hover:bg-muted"
+            >
+              سفارش‌های من
+            </Link>
+          )}
+          {!isCustomer && (
+            <Link
+              href={ROUTES.login}
+              onClick={onClose}
+              className="rounded-xl px-3 py-3 transition hover:bg-muted"
+            >
+              ورود / ثبت‌نام
+            </Link>
+          )}
           <div onClick={onClose}>
             <AboutModalTrigger
               label="درباره ما"
@@ -73,46 +112,91 @@ function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
         </nav>
       </aside>
     </>,
-    document.body
+    document.body,
   );
 }
 
 export function SiteHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const dispatch = useDispatch();
+  const cartCount = useSelector((s: RootState) => s.cart.items.length);
+  const user = useSelector((s: RootState) => s.auth.user);
+  const isCustomer = user?.role === "customer";
+
+  const handleLogout = () => {
+    dispatch(logout());
+    clearAuthCookies();
+    toast.success("با موفقیت خارج شدید");
+    window.location.href = ROUTES.home;
+  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:py-4">
         <Link href={ROUTES.home} className="flex items-center gap-2.5">
           <Logo className="h-12 w-12 drop-shadow-sm sm:h-14 sm:w-14" />
-          <span className="text-2xl font-extrabold tracking-tight text-primary sm:text-3xl">{SITE_NAME}</span>
+          <span className="text-2xl font-extrabold tracking-tight text-primary sm:text-3xl">
+            {SITE_NAME}
+          </span>
         </Link>
 
         <nav className="hidden items-center gap-8 text-sm font-semibold text-foreground md:flex">
           <Link href={ROUTES.domestic} className={navLinkClass}>
             تورهای داخلی
           </Link>
+
           <Link href={ROUTES.category("4")} className={navLinkClass}>
             تورهای خارجی
           </Link>
+
           <AboutModalTrigger label="درباره ما" className={navLinkClass} />
           <ContactModalTrigger label="تماس با ما" className={navLinkClass} />
+          {isCustomer && (
+            <Link href={ROUTES.orders} className={navLinkClass}>
+              سفارش‌های من
+            </Link>
+          )}
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-3">
           <Link
             href={ROUTES.cart}
-            className="hidden items-center gap-1.5 rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:border-primary hover:text-primary sm:flex"
+            aria-label="سبد رزرو"
+            className="relative flex items-center gap-1.5 rounded-full border border-border px-3 py-2 text-sm font-semibold text-foreground transition hover:border-primary hover:text-primary sm:px-4"
           >
             <ShoppingCart className="h-4 w-4" />
-            سبد رزرو
+            <span className="hidden sm:inline">سبد رزرو</span>
+            {cartCount > 0 && (
+              <span className="absolute -top-2 -right-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-coral px-1 text-[10px] font-bold text-white ring-2 ring-background">
+                {cartCount}
+              </span>
+            )}
           </Link>
-          <Link
-            href={ROUTES.adminLogin}
-            className="rounded-full bg-linear-to-l from-primary to-coral px-5 py-2 text-sm font-bold text-primary-foreground shadow-md shadow-primary/20 transition hover:shadow-lg hover:shadow-primary/30"
-          >
-            مدیریت
-          </Link>
+          {isCustomer ? (
+            <button
+              onClick={handleLogout}
+              className="hidden items-center gap-1.5 rounded-full border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition hover:border-red-400 hover:bg-red-50 sm:flex"
+            >
+              <LogOut className="h-4 w-4" />
+              خروج
+            </button>
+          ) : (
+            <>
+              <Link
+                href={ROUTES.login}
+                className="hidden items-center gap-1.5 rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:border-primary hover:text-primary sm:flex"
+              >
+                <UserRound className="h-4 w-4" />
+                ورود
+              </Link>
+              <Link
+                href={ROUTES.adminLogin}
+                className="rounded-full bg-linear-to-l from-primary to-coral px-5 py-2 text-sm font-bold text-primary-foreground shadow-md shadow-primary/20 transition hover:shadow-lg hover:shadow-primary/30"
+              >
+                مدیریت
+              </Link>
+            </>
+          )}
           <button
             onClick={() => setMobileOpen(true)}
             className="rounded-full border border-border p-2 text-foreground md:hidden"
@@ -123,7 +207,7 @@ export function SiteHeader() {
         </div>
       </div>
 
-      <MobileMenu open={mobileOpen} onClose={() => setMobileOpen(false)} />
+      <MobileMenu open={mobileOpen} onClose={() => setMobileOpen(false)} isCustomer={isCustomer} />
     </header>
   );
 }

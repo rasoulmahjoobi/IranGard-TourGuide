@@ -2,44 +2,74 @@ import { useMutation } from "@tanstack/react-query";
 import { useDispatch } from "react-redux";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-import { apiClient } from "@/src/lib/apiClient";
+import { loginRequest } from "@/src/lib/api/auth";
 import { setCredentials } from "@/src/store/authSlice";
 import { setAuthCookies } from "@/src/lib/cookies";
+import { decodeJwt } from "@/src/lib/jwt";
 import type { LoginValues } from "@/src/lib/schemas/auth.schema";
 import { ROUTES } from "@/src/lib/constants";
 
-interface LoginResponse {
-  accessToken: string;
-  refreshToken: string;
+function nextPath() {
+  if (typeof window === "undefined") return null;
+  return new URLSearchParams(window.location.search).get("next");
 }
 
-function decodeJwt(token: string) {
-  const payload = token.split(".")[1];
-  return JSON.parse(atob(payload));
+function applySession(
+  accessToken: string,
+  refreshToken: string,
+  dispatch: ReturnType<typeof useDispatch>,
+) {
+  const decoded = decodeJwt(accessToken);
+  dispatch(
+    setCredentials({
+      user: {
+        username: decoded.username,
+        name: decoded.name,
+        role: decoded.role,
+        phone: decoded.phone,
+      },
+      accessToken,
+      refreshToken,
+    }),
+  );
+  setAuthCookies(accessToken, refreshToken);
+  return decoded;
 }
 
-export function useLogin() {
+export function useLogin(options?: { expectedRole?: "admin" | "customer" }) {
   const dispatch = useDispatch();
   const router = useRouter();
 
   return useMutation({
-    mutationFn: async (values: LoginValues) => {
-      const { data } = await apiClient.post<LoginResponse>("/auth/login", values);
-      return data;
-    },
+    mutationFn: (values: LoginValues) => loginRequest(values.username, values.password),
     onSuccess: (data) => {
       const decoded = decodeJwt(data.accessToken);
-      dispatch(
-        setCredentials({
-          user: { username: decoded.username, name: decoded.name, role: decoded.role },
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken,
-        })
-      );
-      // ذخیره‌ی توکن تو کوکی — همینی که middleware براش چک می‌کنه
-      setAuthCookies(data.accessToken, data.refreshToken);
+
+      if (options?.expectedRole && decoded.role !== options.expectedRole) {
+        toast.error(
+          options.expectedRole === "admin"
+            ? "این حساب مربوط به پنل مدیریت نیست"
+            : "برای ورود به سایت از حساب کاربری مشتری استفاده کنید",
+        );
+        return;
+      }
+
+      applySession(data.accessToken, data.refreshToken, dispatch);
       toast.success("با موفقیت وارد شدید");
-      router.push(ROUTES.adminProducts);
+      const next = nextPath();
+      if (decoded.role === "admin") {
+        router.push(ROUTES.adminProducts);
+        return;
+      }
+      router.push(next || ROUTES.home);
     },
   });
+}
+
+export function applyAuthTokens(
+  accessToken: string,
+  refreshToken: string,
+  dispatch: ReturnType<typeof useDispatch>,
+) {
+  return applySession(accessToken, refreshToken, dispatch);
 }
