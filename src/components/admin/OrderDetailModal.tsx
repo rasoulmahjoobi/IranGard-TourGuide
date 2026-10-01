@@ -57,7 +57,7 @@ export function OrderDetailModal({ order, onClose }: OrderDetailModalProps) {
         { id: order.id, patch: { delivered: "true" } },
         {
           onSuccess: () => {
-            toast.success("سفارش تأیید و تحویل‌شده علامت‌گذاری شد");
+            toast.success("سفارش تأیید شده علامت‌گذاری شد");
             setConfirmAction(null);
             onClose();
           },
@@ -100,8 +100,8 @@ export function OrderDetailModal({ order, onClose }: OrderDetailModalProps) {
                   ? "لغوشده توسط ادمین"
                   : "لغوشده توسط کاربر"
                 : isDelivered
-                  ? "تحویل‌شده"
-                  : "در انتظار ارسال"}
+                  ? "تایید شده"
+                  : "در انتظار تایید"}
             </span>
           </div>
 
@@ -173,13 +173,13 @@ export function OrderDetailModal({ order, onClose }: OrderDetailModalProps) {
             <div className="flex gap-3 border-t border-border pt-4">
               {!isDelivered && (
                 <Button onClick={() => setConfirmAction("deliver")} className="flex-1">
-                  تایید (تحویل داده شد)
+                  تایید (بزن بریم)
                 </Button>
               )}
               <Button
                 variant="secondary"
                 onClick={() => setConfirmAction("cancel")}
-                className="flex-1 !bg-red-50 !text-red-700 hover:!bg-red-100"
+                className="flex-1 bg-red-50! text-red-700! hover:bg-red-100!"
               >
                 لغو سفارش
               </Button>
@@ -193,7 +193,7 @@ export function OrderDetailModal({ order, onClose }: OrderDetailModalProps) {
         title={confirmAction === "deliver" ? "تایید سفارش" : "لغو سفارش"}
         description={
           confirmAction === "deliver"
-            ? "آیا از تایید و علامت‌گذاری این سفارش به‌عنوان تحویل‌شده مطمئن هستید؟"
+            ? "آیا از و علامت‌گذاری این سفارش به‌عنوان تایید شده مطمئن هستید؟"
             : "آیا از لغو این سفارش مطمئن هستید؟"
         }
         confirmLabel={confirmAction === "deliver" ? "تایید شود" : "لغو شود"}

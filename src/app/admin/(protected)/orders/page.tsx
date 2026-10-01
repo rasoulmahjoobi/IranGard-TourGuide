@@ -3,7 +3,13 @@ import { OrderDetailModal } from "@/src/components/admin/OrderDetailModal";
 import { useCallback, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
-import { ArrowDownUp, CheckCircle2, XCircle, Ban } from "lucide-react";
+import {
+  ArrowDownUp,
+  CheckCircle2,
+  XCircle,
+  Ban,
+  RotateCwFadingClock,
+} from "lucide-react";
 import { useOrders } from "@/src/hooks/useOrders";
 import { useCancelOrder } from "@/src/hooks/useOrderMutations";
 import { useAutoCorrectPage } from "@/src/hooks/useAutoCorrectPage";
@@ -33,10 +39,18 @@ function StatusBadge({ order }: { order: Order }) {
       </span>
     );
   }
+  if (order.delivered === "true") {
+    return (
+      <span className="flex w-fit items-center gap-1 rounded-full bg-secondary/10 px-2.5 py-1 text-[11px] font-bold text-secondary">
+        <CheckCircle2 className="h-3 w-3" />
+        تایید شده توسط ادمین
+      </span>
+    );
+  }
   return (
-    <span className="flex w-fit items-center gap-1 rounded-full bg-secondary/10 px-2.5 py-1 text-[11px] font-bold text-secondary">
-      <CheckCircle2 className="h-3 w-3" />
-      تایید شده توسط ادمین
+    <span className="flex w-fit items-center gap-1 rounded-full bg-yellow-100 px-2.5 py-1 text-[11px] font-bold text-yellow-700">
+      <RotateCwFadingClock className="h-3 w-3" />
+      در انتظار تایید توسط ادمین
     </span>
   );
 }
